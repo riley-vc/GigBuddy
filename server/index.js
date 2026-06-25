@@ -6,13 +6,17 @@ import morgan from 'morgan';
 import gigRoutes from './routes/gigs.js';
 import applicationRoutes from './routes/applications.js';
 import userRoutes from './routes/users.js';
+import contractRoutes from './routes/contracts.js';
 
 dotenv.config();
 
 const app = express();
 
 // Middleware
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'http://localhost:5001'],
+  credentials: true,
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -20,6 +24,7 @@ app.use(morgan('dev'));
 app.use('/api/users', userRoutes);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/contracts', contractRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

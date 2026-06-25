@@ -10,7 +10,11 @@
 - **Product Name:** GigBuddy
 - **Type:** B2B2C Marketplace (Web App)
 - **Stack:** MongoDB · Express.js · React (Vite) · Node.js (MERN)
-- **Styling:** Tailwind CSS v3
+- **Styling:** Tailwind CSS v4 (via `@tailwindcss/vite` plugin, no config file)
+- **Icons:** lucide-react
+- **Animation:** motion (Framer Motion)
+- **Server Port:** 4000 (macOS Control Center occupies 5000)
+- **Client Port:** 5173
 - **Current Phase:** Phase 1 MVP
 
 ---
@@ -56,23 +60,47 @@ Connect Event Organizers (Clients) with Musicians/Performers through a dual-view
 | organizerId                | ObjectId | ref: User                               |
 | title                      | String   | required                                |
 | description                | String   |                                         |
-| venue                      | String   | required                                |
+| venueName                  | String   | required (renamed from `venue`)         |
 | date                       | Date     | required                                |
-| startTime / endTime        | String   | e.g. "19:00"                            |
+| soundcheckTime             | String   | e.g. "18:00"                           |
+| setTime                    | String   | e.g. "20:30" (renamed from startTime)  |
+| endTime                    | String   | e.g. "23:00"                           |
 | budget                     | Number   | required (USD)                          |
-| requirements.genres        | [String] |                                         |
-| requirements.instruments   | [String] |                                         |
-| requirements.backlineProvided | Boolean |                                      |
-| status                     | String   | enum: open \| in_progress \| completed \| cancelled |
+| genres                     | [String] | flat (was requirements.genres)          |
+| instruments                | [String] | flat (was requirements.instruments)     |
+| backlineProvided           | [String] | list of gear items (was Boolean)        |
+| status                     | String   | enum: open \| filled \| in_progress \| completed \| cancelled |
 
 ### Application
-| Field       | Type     | Notes                                                   |
-|-------------|----------|---------------------------------------------------------|
-| gigId       | ObjectId | ref: Gig                                                |
-| musicianId  | ObjectId | ref: User                                               |
-| status      | String   | enum: pending \| accepted \| rejected                   |
-| initiatedBy | String   | enum: musician \| organizer — who started the connection |
-| appliedAt   | Date     | default: Date.now                                       |
+| Field          | Type     | Notes                                                   |
+|----------------|----------|---------------------------------------------------------|
+| gigId          | ObjectId | ref: Gig                                                |
+| musicianId     | ObjectId | ref: User                                               |
+| musicianName   | String   | denormalized for display                                |
+| musicianAvatar | String   | URL — denormalized for display                          |
+| instrument     | String   | instrument they'll play                                 |
+| skills         | [String] | skill tags                                              |
+| sampleVideoUrl | String   | optional YouTube/video URL                              |
+| coverNote      | String   | cover letter from musician                              |
+| status         | String   | enum: pending \| approved \| rejected                   |
+| initiatedBy    | String   | enum: musician \| organizer                             |
+| appliedAt      | Date     | default: Date.now                                       |
+
+### Contract
+| Field               | Type     | Notes                                                   |
+|---------------------|----------|---------------------------------------------------------|
+| gigId               | ObjectId | ref: Gig                                                |
+| applicationId       | ObjectId | ref: Application                                        |
+| musicianId          | ObjectId | ref: User                                               |
+| organizerId         | ObjectId | ref: User                                               |
+| gigTitle            | String   | denormalized                                            |
+| venueName           | String   | denormalized                                            |
+| date                | String   | ISO date string                                         |
+| compensation        | Number   | USD amount locked in escrow                             |
+| organizerSignature  | String   | typed legal name                                        |
+| musicianSignature   | String   | typed legal name                                        |
+| signedAt            | String   | date string                                             |
+| status              | String   | enum: pending_signatures \| fully_signed \| completed   |
 
 ---
 
@@ -89,6 +117,9 @@ Connect Event Organizers (Clients) with Musicians/Performers through a dual-view
 | PATCH  | /api/applications/:id/status  | Accept / reject an application               |
 | GET    | /api/users                    | List users (filter: role=musician)           |
 | GET    | /api/users/:id                | Single user profile                          |
+| GET    | /api/contracts                | List contracts (filter: gigId/musicianId/organizerId) |
+| POST   | /api/contracts                | Create contract (auto-approves app + fills gig) |
+| PATCH  | /api/contracts/:id/sign       | Add a signature (role: organizer\|musician)  |
 
 | Phase | Focus |
 |-------|-------|
@@ -117,3 +148,4 @@ Connect Event Organizers (Clients) with Musicians/Performers through a dual-view
 | 2026-06-21 | Initial agents.md created for Phase 1 scaffold |
 | 2026-06-21 | Philippines recontextualization (₱ PHP, PH venues, OPM/Bisrock genres) |
 | 2026-06-21 | Marketplace made dual-view: organizers see artist directory + invite flow; User schema extended with musician profile fields; Application schema gets initiatedBy field; added /api/users route |
+| 2026-06-24 | Full AI Studio frontend migration: Gig schema flattened (venueName, genres, instruments, backlineProvided as [String], soundcheckTime, setTime, filled status); Application enriched with musician display fields; new Contract model + /api/contracts routes; Tailwind v3→v4 upgrade; all components ported TSX→JSX; localStorage replaced with real API calls; server on port 4000 (5000 occupied by macOS Control Center) |

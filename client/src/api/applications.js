@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:3000/api/applications';
+const BASE = '/api/applications';
 
 export async function getApplications(params = {}) {
   const query = new URLSearchParams(params).toString();
@@ -8,11 +8,11 @@ export async function getApplications(params = {}) {
   return json.data;
 }
 
-export async function createApplication(data) {
+export async function createApplication(appData) {
   const res = await fetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(appData),
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error);

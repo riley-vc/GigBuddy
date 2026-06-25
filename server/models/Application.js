@@ -12,10 +12,17 @@ const ApplicationSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    message: { type: String, default: '' },
+    // Denormalized musician display info (so we don't need to populate for list views)
+    musicianName:   { type: String, default: '' },
+    musicianAvatar: { type: String, default: '' },
+    instrument:     { type: String, default: '' },
+    skills:         { type: [String], default: [] },
+    sampleVideoUrl: { type: String, default: '' },
+    coverNote:      { type: String, default: '' },
+
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'rejected'],
+      enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
     },
     // 'musician' = musician applied; 'organizer' = organizer sent an invitation

@@ -31,7 +31,36 @@ router.get('/:id', async (req, res) => {
 // POST /api/gigs — create a new gig
 router.post('/', async (req, res) => {
   try {
-    const gig = new Gig(req.body);
+    const {
+      organizerId,
+      title,
+      description,
+      venueName,
+      date,
+      soundcheckTime,
+      setTime,
+      endTime,
+      budget,
+      genres,
+      instruments,
+      backlineProvided,
+    } = req.body;
+
+    const gig = new Gig({
+      organizerId,
+      title,
+      description,
+      venueName,
+      date,
+      soundcheckTime,
+      setTime,
+      endTime,
+      budget,
+      genres,
+      instruments,
+      backlineProvided,
+    });
+
     await gig.save();
     res.status(201).json({ success: true, data: gig });
   } catch (err) {

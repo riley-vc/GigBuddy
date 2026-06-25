@@ -11,8 +11,8 @@ router.get('/', async (req, res) => {
     if (req.query.musicianId) filter.musicianId = req.query.musicianId;
 
     const applications = await Application.find(filter)
-      .populate('gigId', 'title venue date budget status')
-      .populate('musicianId', 'name email')
+      .populate('gigId', 'title venueName date budget status')
+      .populate('musicianId', 'name email avatar')
       .sort({ appliedAt: -1 });
 
     res.json({ success: true, data: applications });
@@ -24,7 +24,17 @@ router.get('/', async (req, res) => {
 // POST /api/applications — musician applies OR organizer invites
 router.post('/', async (req, res) => {
   try {
-    const { gigId, musicianId, message, initiatedBy = 'musician' } = req.body;
+    const {
+      gigId,
+      musicianId,
+      musicianName,
+      musicianAvatar,
+      instrument,
+      skills,
+      sampleVideoUrl,
+      coverNote,
+      initiatedBy = 'musician',
+    } = req.body;
 
     // Check for duplicate application/invitation on the same gig+musician pair
     const existing = await Application.findOne({ gigId, musicianId });
@@ -32,7 +42,18 @@ router.post('/', async (req, res) => {
       return res.status(409).json({ success: false, error: 'Already applied to this gig' });
     }
 
-    const application = new Application({ gigId, musicianId, message, initiatedBy });
+    const application = new Application({
+      gigId,
+      musicianId,
+      musicianName,
+      musicianAvatar,
+      instrument,
+      skills,
+      sampleVideoUrl,
+      coverNote,
+      initiatedBy,
+    });
+
     await application.save();
     res.status(201).json({ success: true, data: application });
   } catch (err) {
@@ -40,7 +61,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PATCH /api/applications/:id/status — organizer accepts or rejects
+// PATCH /api/applications/:id/status — organizer approves or rejects
 router.patch('/:id/status', async (req, res) => {
   try {
     const { status } = req.body;

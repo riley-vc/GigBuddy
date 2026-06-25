@@ -1,6 +1,7 @@
 /**
- * seed.js — Populate MongoDB with Philippine-context sample data for GigBuddy.
- * Run: node seed.js
+ * GigBuddy Seed Script
+ * Run: node seed.js  (from /server directory)
+ * Drops and re-creates all collections with rich sample data matching the new schemas.
  */
 
 import mongoose from 'mongoose';
@@ -8,242 +9,203 @@ import dotenv from 'dotenv';
 import User from './models/User.js';
 import Gig from './models/Gig.js';
 import Application from './models/Application.js';
+import Contract from './models/Contract.js';
 
 dotenv.config();
 
-const seed = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ Connected to MongoDB');
+async function seed() {
+  await mongoose.connect(process.env.MONGO_URI);
+  console.log('✅ MongoDB connected');
 
-    await User.deleteMany({});
-    await Gig.deleteMany({});
-    await Application.deleteMany({});
-    console.log('🗑️  Cleared existing data');
+  // --- Wipe existing data ---
+  await User.deleteMany({});
+  await Gig.deleteMany({});
+  await Application.deleteMany({});
+  await Contract.deleteMany({});
+  console.log('🗑️  Cleared existing collections');
 
-    // ── Users ──────────────────────────────────────────────────────────────
-    const [carlo, anna, marco, juan, maya, rico] = await User.insertMany([
-      // Organizers
-      {
-        name: 'Carlo Santos',
-        email: 'carlo@eventsmanila.ph',
-        password: 'hashed_pw_1',
-        role: 'organizer',
-        location: 'Makati City',
-      },
-      {
-        name: 'Anna Reyes',
-        email: 'anna@festivalph.com',
-        password: 'hashed_pw_2',
-        role: 'organizer',
-        location: 'Bonifacio Global City, Taguig',
-      },
-      {
-        name: 'Marco Bautista',
-        email: 'marco@bgcvenues.ph',
-        password: 'hashed_pw_3',
-        role: 'organizer',
-        location: 'Pasig City',
-      },
-      // Musicians (with full profiles)
-      {
-        name: 'Juan Dela Cruz',
-        email: 'juan@musicianph.com',
-        password: 'hashed_pw_4',
-        role: 'musician',
-        bio: 'OPM rock guitarist at frontman ng indie band na "Tagalog Street". 8 taon sa scene, nakapag-perform na sa Araneta, Route 196, at iba pang iconic Manila venues.',
-        genres: ['OPM', 'Bisrock', 'Rock', 'Alternative', 'Indie Rock'],
-        instruments: ['Guitar', 'Vocals', 'Bass'],
-        location: 'Quezon City',
-      },
-      {
-        name: 'Maya Santos',
-        email: 'maya@jazzph.com',
-        password: 'hashed_pw_5',
-        role: 'musician',
-        bio: 'Jazz at OPM vocalist na may classical training mula sa UST Conservatory. Specializes sa intimate events, corporate gigs, at wedding receptions. Available as solo act o kasama ang jazz trio.',
-        genres: ['Jazz', 'OPM', 'Bossa Nova', 'Soul', 'Kundiman'],
-        instruments: ['Vocals', 'Piano'],
-        location: 'Makati City',
-      },
-      {
-        name: 'Rico Navarro',
-        email: 'rico@soundwaveph.com',
-        password: 'hashed_pw_6',
-        role: 'musician',
-        bio: 'Electronic at ambient music producer na nakabase sa BGC. Gumagawa ng original soundscapes para sa art events, brand activations, at experiential installations. Available bilang live electronic act o DJ.',
-        genres: ['Electronic', 'Ambient', 'Lo-fi', 'Experimental'],
-        instruments: ['Synthesizer', 'Laptop / DJ Setup', 'Modular'],
-        location: 'Bonifacio Global City, Taguig',
-      },
-    ]);
-    console.log('👤 Seeded 6 users (3 organizers, 3 musicians with profiles)');
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // USERS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const [sarah, leo, clara, marcus] = await User.insertMany([
+    // Organizer 1 (mock logged-in organizer)
+    {
+      name: 'Sarah Jenkins',
+      email: 'sarah@skylightlounge.com',
+      password: 'hashed_placeholder',
+      role: 'organizer',
+      location: 'Chicago, IL',
+    },
+    // Musician 1 (mock logged-in musician)
+    {
+      name: 'Leo Mercer',
+      email: 'leo@mercer.music',
+      password: 'hashed_placeholder',
+      role: 'musician',
+      bio: 'Professional multi-instrumentalist based in Chicago. Specializes in providing thick bass grooves, synth bass layers, and rhythmic syncopation for funk, jazz-fusion, and premium corporate cover bands.',
+      instruments: ['Electric Bass', 'Synthesizer', 'Fretless Bass'],
+      genres: ['Jazz-Fusion', 'Funk', 'Electronic'],
+      location: 'Chicago, IL',
+    },
+    // Musician 2
+    {
+      name: 'Clara Sterling',
+      email: 'clara@sterling.music',
+      password: 'hashed_placeholder',
+      role: 'musician',
+      bio: 'Classically trained bassist with 8 years of live jazz club experience. Expert in swing and hard bop.',
+      instruments: ['Double Bass', 'Upright Bass'],
+      genres: ['Jazz', 'Hard Bop', 'Swing'],
+      location: 'New York, NY',
+    },
+    // Musician 3
+    {
+      name: 'Marcus "Shred" Vance',
+      email: 'marcus@shredvance.com',
+      password: 'hashed_placeholder',
+      role: 'musician',
+      bio: 'Touring guitarist with West Coast cover act experience. Massive repertoire of 80s hair metal and 90s alt-rock.',
+      instruments: ['Electric Guitar (Lead)', 'Backing Vocals'],
+      genres: ['Rock', 'Hard Rock', 'Pop-Punk'],
+      location: 'Los Angeles, CA',
+    },
+  ]);
 
-    // ── Gigs ───────────────────────────────────────────────────────────────
-    const gigs = await Gig.insertMany([
-      {
-        organizerId: carlo._id,
-        title: 'OPM Acoustic Night',
-        description: 'Isang gabi ng purong OPM acoustic sa iconic na Saguijo. Naghahanap kami ng solo artist o duo na may malalim na koneksyon sa Original Pilipino Music. Ang audience ay mga 18–35 taong gulang na passionate sa local music.',
-        venue: 'Saguijo Café + Bar Works',
-        location: 'Poblacion, Makati',
-        date: new Date('2026-07-18'),
-        startTime: '20:00',
-        endTime: '23:00',
-        soundcheckTime: '18:00',
-        budget: 15000,
-        requirements: {
-          genres: ['OPM', 'Acoustic', 'Kundiman', 'Folk'],
-          instruments: ['Acoustic Guitar', 'Vocals'],
-          backlineProvided: false,
-        },
-        status: 'open',
-      },
-      {
-        organizerId: carlo._id,
-        title: 'Corporate Gala — Live Background Music',
-        description: 'Taunang corporate gala para sa 400 bisita sa Sofitel. Kailangan namin ng eleganteng live music sa buong gabi. Walang malakas na rock — sophisticated at understated ang gusto namin.',
-        venue: 'Sofitel Philippine Plaza Manila',
-        location: 'CCP Complex, Pasay',
-        date: new Date('2026-08-02'),
-        startTime: '18:00',
-        endTime: '23:00',
-        soundcheckTime: '16:00',
-        budget: 80000,
-        requirements: {
-          genres: ['Classical', 'Jazz', 'OPM', 'Bossa Nova'],
-          instruments: ['String Quartet', 'Piano', 'Vocals'],
-          backlineProvided: true,
-        },
-        status: 'open',
-      },
-      {
-        organizerId: anna._id,
-        title: 'Bisrock Festival — Main Stage',
-        description: 'Headlining set sa aming taunang outdoor summer festival sa BGC. Inaasahan namin ang 2,000+ attendees. High-energy performance, full PA system provided.',
-        venue: 'The Ruins BGC',
-        location: 'Bonifacio Global City, Taguig',
-        date: new Date('2026-07-26'),
-        startTime: '17:00',
-        endTime: '19:30',
-        soundcheckTime: '14:00',
-        budget: 150000,
-        requirements: {
-          genres: ['Bisrock', 'OPM', 'Rock', 'Alternative'],
-          instruments: ['Guitar', 'Bass', 'Drums', 'Keys', 'Vocals'],
-          backlineProvided: true,
-        },
-        status: 'open',
-      },
-      {
-        organizerId: anna._id,
-        title: 'Vineyard & Wine Acoustic Session',
-        description: 'Relaxed Saturday afternoon session sa aming wine garden. Naghahanap ng solo acoustic act o duo na may warm, folk/OPM feel para sa aming mga bisita.',
-        venue: 'Las Casas Filipinas de Acuzar',
-        location: 'Bagac, Bataan',
-        date: new Date('2026-07-12'),
-        startTime: '14:00',
-        endTime: '17:00',
-        soundcheckTime: '13:00',
-        budget: 20000,
-        requirements: {
-          genres: ['Folk', 'Acoustic', 'OPM', 'Kundiman'],
-          instruments: ['Acoustic Guitar', 'Vocals', 'Ukulele'],
-          backlineProvided: false,
-        },
-        status: 'open',
-      },
-      {
-        organizerId: marco._id,
-        title: 'Private Wedding Reception — Tagaytay',
-        description: 'Wedding reception para sa 120 bisita sa Tagaytay Highlands. Ceremony music sa cocktail hour, then transition to upbeat Filipino love songs at dance music para sa reception.',
-        venue: 'Tagaytay Highlands International Golf Club',
-        location: 'Tagaytay City, Cavite',
-        date: new Date('2026-08-15'),
-        startTime: '17:00',
-        endTime: '23:30',
-        soundcheckTime: '15:30',
-        budget: 100000,
-        requirements: {
-          genres: ['OPM', 'Pop', 'R&B', 'Jazz', 'Kundiman'],
-          instruments: ['Piano', 'Vocals', 'Guitar', 'Bass'],
-          backlineProvided: true,
-        },
-        status: 'open',
-      },
-      {
-        organizerId: marco._id,
-        title: 'Art Gallery Opening — Ambient / Electronic Set',
-        description: 'Contemporary art gallery opening sa Silverlens. Gusto namin ng experimental, ambient, o electronic music na mag-complement sa mga installations.',
-        venue: 'Silverlens Galleries',
-        location: 'Mandaluyong City',
-        date: new Date('2026-07-08'),
-        startTime: '19:00',
-        endTime: '23:00',
-        soundcheckTime: '17:30',
-        budget: 35000,
-        requirements: {
-          genres: ['Electronic', 'Ambient', 'Experimental', 'Lo-fi'],
-          instruments: ['Synthesizer', 'Laptop / DJ Setup', 'Modular'],
-          backlineProvided: true,
-        },
-        status: 'open',
-      },
-    ]);
-    console.log(`🎸 Seeded ${gigs.length} gigs`);
+  console.log(`👥 Created ${4} users`);
 
-    // ── Applications & Invitations ─────────────────────────────────────────
-    await Application.insertMany([
-      // Musician-initiated applications
-      {
-        gigId: gigs[0]._id,
-        musicianId: juan._id,
-        status: 'pending',
-        initiatedBy: 'musician',
-        message: 'Malaking fan ng OPM acoustic scene — ang aking duo ay perpekto para dito!',
-      },
-      {
-        gigId: gigs[0]._id,
-        musicianId: maya._id,
-        status: 'accepted',
-        initiatedBy: 'musician',
-        message: 'Solo acoustic vocalist na may 6 na taon ng OPM performance. Puwede akong magpadala ng setlist.',
-      },
-      {
-        gigId: gigs[2]._id,
-        musicianId: juan._id,
-        status: 'pending',
-        initiatedBy: 'musician',
-        message: 'Ang aming band ay nag-headline na sa mga outdoor festivals sa Metro Manila.',
-      },
-      // Organizer-initiated invitation
-      {
-        gigId: gigs[5]._id,
-        musicianId: rico._id,
-        status: 'pending',
-        initiatedBy: 'organizer',
-        message: "You've been personally invited to perform at our gallery opening. We love your ambient work!",
-      },
-      {
-        gigId: gigs[3]._id,
-        musicianId: maya._id,
-        status: 'rejected',
-        initiatedBy: 'musician',
-        message: 'Available ako sa petsa na ito para sa acoustic session.',
-      },
-    ]);
-    console.log('📝 Seeded 5 applications / invitations');
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // GIGS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const [gig1, gig2, gig3, gig4] = await Gig.insertMany([
+    {
+      organizerId: sarah._id,
+      title: 'Modern Jazz Trio - Double Bassist Needed',
+      venueName: 'The Blue Note Lounge (Speakeasy)',
+      date: new Date('2026-07-04'),
+      soundcheckTime: '18:00',
+      setTime: '20:30',
+      endTime: '23:00',
+      budget: 650,
+      genres: ['Jazz', 'Hard Bop', 'Swing'],
+      instruments: ['Double Bass', 'Upright Bass'],
+      backlineProvided: ['Acoustic Grand Piano', 'Yamaha Maple Custom Drum Kit', 'Gallien-Krueger Bass Amp'],
+      description: 'Looking for a seasoned double bassist with strong improvisational skills and a pristine acoustic tone. We will be performing three 45-minute sets of standard repertoire and contemporary jazz-fusion arrangements. Dress code is semi-formal (dark suits). Free meal and beverages provided by the venue.',
+      status: 'open',
+    },
+    {
+      organizerId: sarah._id,
+      title: 'Rock Cover Band - Lead Guitarist for Summer Festival',
+      venueName: 'The Foundry Outdoor Stage',
+      date: new Date('2026-07-11'),
+      soundcheckTime: '15:30',
+      setTime: '19:00',
+      endTime: '21:00',
+      budget: 850,
+      genres: ['Rock', 'Hard Rock', 'Pop-Punk'],
+      instruments: ['Electric Guitar (Lead)', 'Backing Vocals'],
+      backlineProvided: ['Marshall JCM800 Half-Stack', 'Orange PPC412 Cabinet', 'Monaural Monitor Mixes'],
+      description: 'Urgent call for a versatile lead guitarist who can tackle 80s rock classics, modern alternative anthems, and perform backup harmony vocals. Must be energetic on stage. We have full professional PA and sound engineering support. 15-track setlist will be provided upon MoA signing.',
+      status: 'open',
+    },
+    {
+      organizerId: sarah._id,
+      title: 'Acoustic Duo with Violinist for Premium Wedding',
+      venueName: 'Vineyard & Oak Estate Cellars',
+      date: new Date('2026-07-18'),
+      soundcheckTime: '13:00',
+      setTime: '15:30',
+      endTime: '17:30',
+      budget: 1200,
+      genres: ['Classical-Crossover', 'Acoustic', 'Folk'],
+      instruments: ['Violin', 'Acoustic Violin'],
+      backlineProvided: ["Shure SM137 Instrument Mic", 'Direct Box (DI)', 'Bose L1 Compact PA System'],
+      description: "Upscale wedding ceremony and cocktail hour. We need an elegant, precise violinist to collaborate with our resident acoustic guitarist. Must be able to play modern popular songs rearranged for classical strings, plus Pachelbel's Canon in D. Neat attire (formal tux/gown) is strictly required.",
+      status: 'open',
+    },
+    {
+      organizerId: sarah._id,
+      title: 'Synthwave Keyboardist for Indie EP Release',
+      venueName: 'The Neon Grid Underground',
+      date: new Date('2026-07-25'),
+      soundcheckTime: '17:00',
+      setTime: '21:30',
+      endTime: '22:45',
+      budget: 500,
+      genres: ['Synthwave', 'Indie Pop', 'Electronic'],
+      instruments: ['Synthesizer', 'MIDI Keyboard Controller'],
+      backlineProvided: ['Heavy-Duty Keyboard Stand', 'Stereo Radial DI Boxes', 'Vocal Microphone Shure Beta 58A'],
+      description: 'Underground Electronic/Retro band looking for a live synth player to handle pads, lead solos, and manual arpeggios for our 8-track EP release party. High preference for players with their own portable performance synthesizers (e.g. Sequential Prophet, Korg Minilogue). Cyberpunk visual aesthetic.',
+      status: 'open',
+    },
+  ]);
 
-    console.log('\n🎉 Database seeded successfully! (Philippines context)');
-    console.log(`\nMock Organizer ID (Carlo): ${carlo._id}`);
-    console.log(`Mock Musician ID (Juan):   ${juan._id}`);
+  console.log(`🎸 Created ${4} gigs`);
 
-  } catch (err) {
-    console.error('❌ Seed error:', err.message);
-  } finally {
-    await mongoose.disconnect();
-    console.log('🔌 Disconnected from MongoDB');
-  }
-};
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // APPLICATIONS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const [app1, app2] = await Application.insertMany([
+    {
+      gigId: gig1._id,
+      musicianId: clara._id,
+      musicianName: 'Clara Sterling',
+      musicianAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+      instrument: 'Double Bass',
+      skills: ['Sight-reading', 'Be-bop walking lines', 'Acoustic bow (arco)'],
+      sampleVideoUrl: 'https://www.youtube.com/watch?v=demo1',
+      coverNote: 'Hello! I am a classically trained bassist with 8 years of live jazz club experience. I love swing and hard bop, and I can lock in seamlessly with any rhythm section. I have my own high-end carbon-fiber flight case and Realist pickup setup. Looking forward to making music together!',
+      status: 'pending',
+      initiatedBy: 'musician',
+      appliedAt: new Date('2026-06-22'),
+    },
+    {
+      gigId: gig2._id,
+      musicianId: marcus._id,
+      musicianName: 'Marcus "Shred" Vance',
+      musicianAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+      instrument: 'Electric Guitar (Lead)',
+      skills: ['Improvisational solos', 'High-range backing vocals', 'Stage acrobatics'],
+      sampleVideoUrl: 'https://www.youtube.com/watch?v=demo2',
+      coverNote: "Hey guys! This is Marcus. I've toured with cover acts all over the West Coast and have a massive repertoire of 80s hair metal and 90s alt-rock. I use a Kemper Profiler for instant perfect tones directly to FOH. I have solid backing vocal range (up to high B). Let's rock!",
+      status: 'pending',
+      initiatedBy: 'musician',
+      appliedAt: new Date('2026-06-23'),
+    },
+  ]);
 
-seed();
+  console.log(`📝 Created ${2} applications`);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // CONTRACTS (archived / completed example)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  await Contract.insertMany([
+    {
+      gigId: gig1._id, // reference any gig for archive purposes
+      musicianId: leo._id,
+      organizerId: sarah._id,
+      gigTitle: 'Summer Lounge Session - Rhythm Section Pack',
+      venueName: 'The Skylight Rooftop Bar',
+      date: '2026-06-15',
+      compensation: 450,
+      organizerSignature: 'Sarah Jenkins (Skylight Lounge)',
+      musicianSignature: 'Leo Mercer',
+      signedAt: '2026-06-10',
+      status: 'completed',
+    },
+  ]);
+
+  console.log(`📄 Created ${1} archived contract`);
+
+  console.log('\n🌱 Seed complete!');
+  console.log(`\nMock user IDs for Phase 1 hardcoded auth:`);
+  console.log(`  Organizer (Sarah Jenkins): ${sarah._id}`);
+  console.log(`  Musician  (Leo Mercer):    ${leo._id}`);
+
+  await mongoose.disconnect();
+  process.exit(0);
+}
+
+seed().catch((err) => {
+  console.error('❌ Seed failed:', err);
+  process.exit(1);
+});
