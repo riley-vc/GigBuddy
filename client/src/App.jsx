@@ -6,11 +6,13 @@ import {
   Sparkles,
   PlayCircle,
   Check,
+  Store,
 } from 'lucide-react';
 
 import { getGigs, createGig, updateGigStatus } from './api/gigs.js';
 import { getApplications, createApplication, updateApplicationStatus } from './api/applications.js';
 import { getContracts, createContract, signContract } from './api/contracts.js';
+import { getUsers } from './api/users.js';
 
 import RoleToggle from './components/RoleToggle.jsx';
 import Header from './components/Header.jsx';
@@ -19,6 +21,7 @@ import GigCreatorForm from './components/GigCreatorForm.jsx';
 import OrganizerDashboard from './components/OrganizerDashboard.jsx';
 import MusicianDashboard from './components/MusicianDashboard.jsx';
 import GigMarketplace from './components/GigMarketplace.jsx';
+import ArtistMarketplace from './components/ArtistMarketplace.jsx';
 
 // ─── Phase 1 Mock Auth ─────────────────────────────────────────────────────────
 // These IDs are printed by seed.js — swap them after running the seed script.
@@ -62,6 +65,7 @@ export default function App() {
   const [gigs, setGigs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [contracts, setContracts] = useState([]);
+  const [musicians, setMusicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -77,16 +81,18 @@ export default function App() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [gigsData, appsData, contractsData] = await Promise.all([
+      const [gigsData, appsData, contractsData, musiciansData] = await Promise.all([
         getGigs(),
         getApplications(),
         getContracts(),
+        getUsers({ role: 'musician' }),
       ]);
 
       // Normalize _id → id for component compatibility
       setGigs(gigsData.map(normalizeId));
       setApplications(appsData.map(normalizeApp));
       setContracts(contractsData.map(normalizeId));
+      setMusicians(musiciansData.map(normalizeId));
     } catch (err) {
       setError('Could not connect to the GigBuddy API. Make sure the server is running.');
       console.error(err);
@@ -221,6 +227,29 @@ export default function App() {
     }
   };
 
+  // 11. Organizer invites a musician directly
+  const handleInviteMusician = async (gigId, musician, note) => {
+    try {
+      const app = await createApplication({
+        gigId,
+        musicianId: musician._id || musician.id,
+        musicianName: musician.name,
+        musicianAvatar: musician.avatar || '',
+        instrument: (musician.instruments || [])[0] || '',
+        skills: [],
+        coverNote: note || `Direct invitation from event planner Sarah Jenkins.`,
+        initiatedBy: 'organizer',
+      });
+      setApplications((prev) => [normalizeApp(app), ...prev]);
+    } catch (err) {
+      if (err.message?.includes('Already applied')) {
+        // silently ignore duplicate — ArtistMarketplace already prevents this in the UI
+        return;
+      }
+      alert(`Failed to send invitation: ${err.message}`);
+    }
+  };
+
   // 8–10. Local musician profile mutations (Phase 1 — no DB call yet)
   const handleUpdateAvailability = (day, status) => {
     setProfile((prev) => ({
@@ -301,23 +330,32 @@ export default function App() {
                 <button
                   id="tab-organizer-dashboard"
                   onClick={() => setOrganizerTab('dashboard')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    organizerTab === 'dashboard'
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'dashboard'
                       ? 'bg-zinc-800 text-zinc-50 font-bold'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
-                  }`}
+                    }`}
                 >
                   <Briefcase className="w-3.5 h-3.5" />
                   Planner Dashboard
                 </button>
                 <button
-                  id="tab-organizer-create"
-                  onClick={() => setOrganizerTab('create_gig')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    organizerTab === 'create_gig'
+                  id="tab-organizer-artists"
+                  onClick={() => setOrganizerTab('artist_marketplace')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'artist_marketplace'
                       ? 'bg-zinc-800 text-zinc-50 font-bold'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
-                  }`}
+                    }`}
+                >
+                  <Store className="w-3.5 h-3.5 text-fuchsia-400" />
+                  Artist Marketplace
+                </button>
+                <button
+                  id="tab-organizer-create"
+                  onClick={() => setOrganizerTab('create_gig')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'create_gig'
+                      ? 'bg-zinc-800 text-zinc-50 font-bold'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-violet-400" />
                   Publish Open Gig Call
@@ -328,11 +366,10 @@ export default function App() {
                 <button
                   id="tab-musician-marketplace"
                   onClick={() => setMusicianTab('find_gigs')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    musicianTab === 'find_gigs'
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${musicianTab === 'find_gigs'
                       ? 'bg-zinc-800 text-zinc-50 font-bold'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
-                  }`}
+                    }`}
                 >
                   <Compass className="w-3.5 h-3.5" />
                   Find Live Gigs
@@ -340,11 +377,10 @@ export default function App() {
                 <button
                   id="tab-musician-dashboard"
                   onClick={() => setMusicianTab('dashboard')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    musicianTab === 'dashboard'
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${musicianTab === 'dashboard'
                       ? 'bg-zinc-800 text-zinc-50 font-bold'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
-                  }`}
+                    }`}
                 >
                   <Users className="w-3.5 h-3.5" />
                   Musician Dashboard
@@ -370,6 +406,13 @@ export default function App() {
                 onRejectApplication={handleRejectApplication}
                 onCancelGig={handleCancelGig}
                 onOpenContract={handleOpenExistingContract}
+              />
+            ) : organizerTab === 'artist_marketplace' ? (
+              <ArtistMarketplace
+                musicians={musicians}
+                gigs={gigs}
+                applications={applications}
+                onInvite={handleInviteMusician}
               />
             ) : (
               <GigCreatorForm

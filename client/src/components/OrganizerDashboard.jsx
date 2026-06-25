@@ -169,7 +169,13 @@ export default function OrganizerDashboard({
         {/* B. Review Applicants */}
         {activeTab === 'applicants' && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-zinc-100 text-sm">Musician Applications Awaiting Review</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-zinc-100 text-sm">Incoming Applications & Pending Invitations</h3>
+              <div className="flex gap-2 text-[10px] font-mono text-zinc-500">
+                <span className="px-2 py-0.5 bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded">Self-Applied</span>
+                <span className="px-2 py-0.5 bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 rounded">Organizer Invite</span>
+              </div>
+            </div>
 
             {pendingApps === 0 ? (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center space-y-2">
@@ -194,16 +200,26 @@ export default function OrganizerDashboard({
                             className="w-12 h-12 rounded-xl object-cover border border-zinc-800 shrink-0"
                           />
                           <div className="space-y-2 flex-1">
-                            <div>
-                              <h4 className="font-bold text-zinc-100 text-base flex items-center gap-2">
+                           <div>
+                              <h4 className="font-bold text-zinc-100 text-base flex items-center gap-2 flex-wrap">
                                 {app.musicianName || 'Unknown Musician'}
                                 <span className="px-2 py-0.5 bg-zinc-950 border border-zinc-800 text-[9px] font-mono font-normal text-violet-400 rounded">
                                   {app.instrument}
                                 </span>
+                                {app.initiatedBy === 'organizer' ? (
+                                  <span className="px-2 py-0.5 bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 text-[9px] font-mono rounded">
+                                    📩 Invited by You
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-violet-500/10 text-violet-400 border border-violet-500/20 text-[9px] font-mono rounded">
+                                    🎵 Self-Applied
+                                  </span>
+                                )}
                               </h4>
                               {associatedGig && (
                                 <p className="text-[11px] font-mono text-zinc-500 mt-0.5">
-                                  Applying for: <strong className="text-zinc-300 font-sans font-medium">"{associatedGig.title}"</strong>
+                                  {app.initiatedBy === 'organizer' ? 'Invited for:' : 'Applying for:'}{' '}
+                                  <strong className="text-zinc-300 font-sans font-medium">"{associatedGig.title}"</strong>
                                 </p>
                               )}
                             </div>
