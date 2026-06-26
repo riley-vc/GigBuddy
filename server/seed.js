@@ -1,7 +1,7 @@
 /**
- * GigBuddy Seed Script
+ * GigBag Seed Script — Philippines Context
  * Run: node seed.js  (from /server directory)
- * Drops and re-creates all collections with rich sample data matching the new schemas.
+ * Drops and re-creates all collections with PH-flavored sample data.
  */
 
 import mongoose from 'mongoose';
@@ -27,47 +27,47 @@ async function seed() {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // USERS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  const [sarah, leo, clara, marcus] = await User.insertMany([
+  const [maria, carlo, bea, jomar] = await User.insertMany([
     // Organizer 1 (mock logged-in organizer)
     {
-      name: 'Sarah Jenkins',
-      email: 'sarah@skylightlounge.com',
+      name: 'Maria Santos',
+      email: 'maria@skydeck.com.ph',
       password: 'hashed_placeholder',
       role: 'organizer',
-      location: 'Chicago, IL',
+      location: 'BGC, Taguig',
     },
     // Musician 1 (mock logged-in musician)
     {
-      name: 'Leo Mercer',
-      email: 'leo@mercer.music',
+      name: 'Carlo Reyes',
+      email: 'carlo@gigbag.ph',
       password: 'hashed_placeholder',
       role: 'musician',
-      bio: 'Professional multi-instrumentalist based in Chicago. Specializes in providing thick bass grooves, synth bass layers, and rhythmic syncopation for funk, jazz-fusion, and premium corporate cover bands.',
-      instruments: ['Electric Bass', 'Synthesizer', 'Fretless Bass'],
-      genres: ['Jazz-Fusion', 'Funk', 'Electronic'],
-      location: 'Chicago, IL',
+      bio: 'Professional guitarist and bassist based in BGC, Taguig. Specializes in OPM, Bisrock, and P-pop sessions for corporate events, weddings, and live bar gigs across Metro Manila. Full backline available.',
+      instruments: ['Electric Guitar', 'Bass Guitar', 'Acoustic Guitar'],
+      genres: ['OPM', 'Bisrock', 'P-pop'],
+      location: 'BGC, Taguig',
     },
     // Musician 2
     {
-      name: 'Clara Sterling',
-      email: 'clara@sterling.music',
+      name: 'Bea Villanueva',
+      email: 'bea@beatrice.music',
       password: 'hashed_placeholder',
       role: 'musician',
-      bio: 'Classically trained bassist with 8 years of live jazz club experience. Expert in swing and hard bop.',
-      instruments: ['Double Bass', 'Upright Bass'],
-      genres: ['Jazz', 'Hard Bop', 'Swing'],
-      location: 'New York, NY',
+      bio: 'Versatile vocalist and keys player from Cebu City. 6 years of live OPM lounge and events experience. Fluent in Visayan and Tagalog repertoire, Filipino jazz standards, and kundiman.',
+      instruments: ['Vocals', 'Piano', 'Keyboard'],
+      genres: ['OPM', 'Kundiman', 'Jazz-OPM'],
+      location: 'Cebu City',
     },
     // Musician 3
     {
-      name: 'Marcus "Shred" Vance',
-      email: 'marcus@shredvance.com',
+      name: 'Jomar "JR" Ramos',
+      email: 'jr@jrdrums.ph',
       password: 'hashed_placeholder',
       role: 'musician',
-      bio: 'Touring guitarist with West Coast cover act experience. Massive repertoire of 80s hair metal and 90s alt-rock.',
-      instruments: ['Electric Guitar (Lead)', 'Backing Vocals'],
-      genres: ['Rock', 'Hard Rock', 'Pop-Punk'],
-      location: 'Los Angeles, CA',
+      bio: 'Session drummer with extensive Bisrock and alt-OPM gig history. Has played at Route 196, 12 Monkeys, and B-Side Collective. Tight grooves, reliable kit, and full professional setup.',
+      instruments: ['Drums', 'Percussion', 'Cajon'],
+      genres: ['Bisrock', 'Alternative OPM', 'Indie PH'],
+      location: 'Quezon City',
     },
   ]);
 
@@ -78,63 +78,63 @@ async function seed() {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const [gig1, gig2, gig3, gig4] = await Gig.insertMany([
     {
-      organizerId: sarah._id,
-      title: 'Modern Jazz Trio - Double Bassist Needed',
-      venueName: 'The Blue Note Lounge (Speakeasy)',
-      date: new Date('2026-07-04'),
-      soundcheckTime: '18:00',
-      setTime: '20:30',
-      endTime: '23:00',
-      budget: 650,
-      genres: ['Jazz', 'Hard Bop', 'Swing'],
-      instruments: ['Double Bass', 'Upright Bass'],
-      backlineProvided: ['Acoustic Grand Piano', 'Yamaha Maple Custom Drum Kit', 'Gallien-Krueger Bass Amp'],
-      description: 'Looking for a seasoned double bassist with strong improvisational skills and a pristine acoustic tone. We will be performing three 45-minute sets of standard repertoire and contemporary jazz-fusion arrangements. Dress code is semi-formal (dark suits). Free meal and beverages provided by the venue.',
-      status: 'open',
-    },
-    {
-      organizerId: sarah._id,
-      title: 'Rock Cover Band - Lead Guitarist for Summer Festival',
-      venueName: 'The Foundry Outdoor Stage',
-      date: new Date('2026-07-11'),
-      soundcheckTime: '15:30',
+      organizerId: maria._id,
+      title: 'OPM Jazz Duo — Vocalist & Keys for Corporate Dinner',
+      venueName: 'Blackbird Restaurant, Ayala Triangle Gardens',
+      date: new Date('2026-07-12'),
+      soundcheckTime: '17:30',
       setTime: '19:00',
-      endTime: '21:00',
-      budget: 850,
-      genres: ['Rock', 'Hard Rock', 'Pop-Punk'],
-      instruments: ['Electric Guitar (Lead)', 'Backing Vocals'],
-      backlineProvided: ['Marshall JCM800 Half-Stack', 'Orange PPC412 Cabinet', 'Monaural Monitor Mixes'],
-      description: 'Urgent call for a versatile lead guitarist who can tackle 80s rock classics, modern alternative anthems, and perform backup harmony vocals. Must be energetic on stage. We have full professional PA and sound engineering support. 15-track setlist will be provided upon MoA signing.',
+      endTime: '22:00',
+      budget: 12000,
+      genres: ['OPM', 'Jazz-OPM', 'Kundiman'],
+      instruments: ['Vocals', 'Keyboard'],
+      backlineProvided: ['Yamaha Clavinova Grand', 'DI Box', 'Vocal Monitor Wedge', 'Shure SM58'],
+      description: 'Looking for an elegant vocalist-keys duo for an intimate corporate anniversary dinner at Blackbird, Makati. Repertoire should cover classic OPM ballads (APO Hiking Society, Eraserheads era), kundiman standards, and tasteful bossa nova. Semi-formal attire required. Free dinner for talent provided by the venue.',
       status: 'open',
     },
     {
-      organizerId: sarah._id,
-      title: 'Acoustic Duo with Violinist for Premium Wedding',
-      venueName: 'Vineyard & Oak Estate Cellars',
-      date: new Date('2026-07-18'),
+      organizerId: maria._id,
+      title: 'Bisrock Full Band — Lead Guitarist for Music Festival',
+      venueName: 'B-Side Collective, The Palace BGC',
+      date: new Date('2026-07-19'),
+      soundcheckTime: '15:00',
+      setTime: '20:00',
+      endTime: '22:30',
+      budget: 18000,
+      genres: ['Bisrock', 'Alternative OPM', 'Indie PH'],
+      instruments: ['Electric Guitar', 'Backing Vocals'],
+      backlineProvided: ['Marshall JVM410H Full Stack', 'Fender Twin Reverb (backline)', 'In-ear Monitor Packs'],
+      description: 'Urgent open call for a high-energy Bisrock lead guitarist who can nail the Parokya, Rivermaya, and Bamboo catalog. Must be able to execute lead fills, power chord walls, and harmony vocals up to high G. Professional PA with full sound engineering by Midas M32. Setlist of 14 tracks provided on signing.',
+      status: 'open',
+    },
+    {
+      organizerId: maria._id,
+      title: 'Acoustic Duo — Wedding Ceremony at Tagaytay',
+      venueName: 'Fernwood Gardens Tagaytay',
+      date: new Date('2026-07-26'),
       soundcheckTime: '13:00',
-      setTime: '15:30',
+      setTime: '15:00',
       endTime: '17:30',
-      budget: 1200,
-      genres: ['Classical-Crossover', 'Acoustic', 'Folk'],
-      instruments: ['Violin', 'Acoustic Violin'],
-      backlineProvided: ["Shure SM137 Instrument Mic", 'Direct Box (DI)', 'Bose L1 Compact PA System'],
-      description: "Upscale wedding ceremony and cocktail hour. We need an elegant, precise violinist to collaborate with our resident acoustic guitarist. Must be able to play modern popular songs rearranged for classical strings, plus Pachelbel's Canon in D. Neat attire (formal tux/gown) is strictly required.",
+      budget: 22000,
+      genres: ['OPM', 'Acoustic', 'Wedding Pop'],
+      instruments: ['Acoustic Guitar', 'Vocals'],
+      backlineProvided: ['Bose L1 Compact System', 'Shure SM137 Instrument Mic', 'Vocal Condenser Mic', 'DI Box'],
+      description: 'Elegant outdoor garden wedding in Tagaytay. Need a polished acoustic guitar-vocal duo. Songs include Faithfully (Journey), Here and Now (Luther Vandross), Ikaw (Yeng Constantino), and Can\'t Help Falling in Love. Smart casual attire. Venue provides full catering for the duo. Must have own reliable transport to Tagaytay.',
       status: 'open',
     },
     {
-      organizerId: sarah._id,
-      title: 'Synthwave Keyboardist for Indie EP Release',
-      venueName: 'The Neon Grid Underground',
-      date: new Date('2026-07-25'),
-      soundcheckTime: '17:00',
-      setTime: '21:30',
-      endTime: '22:45',
-      budget: 500,
-      genres: ['Synthwave', 'Indie Pop', 'Electronic'],
-      instruments: ['Synthesizer', 'MIDI Keyboard Controller'],
-      backlineProvided: ['Heavy-Duty Keyboard Stand', 'Stereo Radial DI Boxes', 'Vocal Microphone Shure Beta 58A'],
-      description: 'Underground Electronic/Retro band looking for a live synth player to handle pads, lead solos, and manual arpeggios for our 8-track EP release party. High preference for players with their own portable performance synthesizers (e.g. Sequential Prophet, Korg Minilogue). Cyberpunk visual aesthetic.',
+      organizerId: maria._id,
+      title: 'P-pop Keyboardist — EP Launch at 12 Monkeys',
+      venueName: '12 Monkeys Music Hall & Bar, Tomas Morato, QC',
+      date: new Date('2026-08-02'),
+      soundcheckTime: '18:00',
+      setTime: '21:00',
+      endTime: '23:00',
+      budget: 9500,
+      genres: ['P-pop', 'Electronic', 'OPM'],
+      instruments: ['Keyboard', 'Synthesizer'],
+      backlineProvided: ['Roland Phantom 8 Workstation', 'Stereo Radial DI Boxes', 'Heavy-Duty Keyboard Stand x2'],
+      description: 'P-pop-influenced indie project launching their debut EP at 12 Monkeys. Looking for a live synth player for pads, lead arpeggios, and real-time filter sweeps during an 8-track set. Aesthetic: night market / neon Manila. Prefer players with their own portable synths (Korg Minilogue, Roland Juno). Streetwear / urban-formal attire.',
       status: 'open',
     },
   ]);
@@ -147,29 +147,29 @@ async function seed() {
   const [app1, app2] = await Application.insertMany([
     {
       gigId: gig1._id,
-      musicianId: clara._id,
-      musicianName: 'Clara Sterling',
+      musicianId: bea._id,
+      musicianName: 'Bea Villanueva',
       musicianAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-      instrument: 'Double Bass',
-      skills: ['Sight-reading', 'Be-bop walking lines', 'Acoustic bow (arco)'],
-      sampleVideoUrl: 'https://www.youtube.com/watch?v=demo1',
-      coverNote: 'Hello! I am a classically trained bassist with 8 years of live jazz club experience. I love swing and hard bop, and I can lock in seamlessly with any rhythm section. I have my own high-end carbon-fiber flight case and Realist pickup setup. Looking forward to making music together!',
+      instrument: 'Vocals & Piano',
+      skills: ['OPM ballads', 'Kundiman standards', 'Bossa nova', 'Jazz chords', 'Fluent Cebuano repertoire'],
+      sampleVideoUrl: 'https://www.youtube.com/watch?v=demo-bea',
+      coverNote: 'Magandang araw po! I\'m Bea, a professional vocalist-pianist from Cebu with 6 years of lounge and events experience. I have a full repertoire of APO Hiking Society, Eraserheads era OPM, and kundiman classics. My piano voicings are clean and elegant — perfect for a corporate dinner setting. Happy to provide a brief audio demo!',
       status: 'pending',
       initiatedBy: 'musician',
-      appliedAt: new Date('2026-06-22'),
+      appliedAt: new Date('2026-06-24'),
     },
     {
       gigId: gig2._id,
-      musicianId: marcus._id,
-      musicianName: 'Marcus "Shred" Vance',
+      musicianId: jomar._id,
+      musicianName: 'Jomar "JR" Ramos',
       musicianAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
       instrument: 'Electric Guitar (Lead)',
-      skills: ['Improvisational solos', 'High-range backing vocals', 'Stage acrobatics'],
-      sampleVideoUrl: 'https://www.youtube.com/watch?v=demo2',
-      coverNote: "Hey guys! This is Marcus. I've toured with cover acts all over the West Coast and have a massive repertoire of 80s hair metal and 90s alt-rock. I use a Kemper Profiler for instant perfect tones directly to FOH. I have solid backing vocal range (up to high B). Let's rock!",
+      skills: ['Bisrock lead riffs', 'High-range backing vocals', 'Parokya & Rivermaya catalog', 'Kemper tones'],
+      sampleVideoUrl: 'https://www.youtube.com/watch?v=demo-jr',
+      coverNote: 'Hey! Jomar here. I\'ve played B-Side, 70s Bistro, and Route 196 and have the full Bisrock catalog memorized from Parokya to Bamboo to Rivermaya. I use a Kemper Profiler direct to FOH for zero-noise, instant-perfect tones. Backing vocals up to high G on chord. Malaya tayo. Let\'s rock Pilipinas!',
       status: 'pending',
       initiatedBy: 'musician',
-      appliedAt: new Date('2026-06-23'),
+      appliedAt: new Date('2026-06-25'),
     },
   ]);
 
@@ -180,15 +180,15 @@ async function seed() {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   await Contract.insertMany([
     {
-      gigId: gig1._id, // reference any gig for archive purposes
-      musicianId: leo._id,
-      organizerId: sarah._id,
-      gigTitle: 'Summer Lounge Session - Rhythm Section Pack',
-      venueName: 'The Skylight Rooftop Bar',
+      gigId: gig1._id,
+      musicianId: carlo._id,
+      organizerId: maria._id,
+      gigTitle: 'Rooftop Lounge Session — OPM Acoustic Set',
+      venueName: 'SkyDeck Events Place, BGC Taguig',
       date: '2026-06-15',
-      compensation: 450,
-      organizerSignature: 'Sarah Jenkins (Skylight Lounge)',
-      musicianSignature: 'Leo Mercer',
+      compensation: 8500,
+      organizerSignature: 'Maria Santos (SkyDeck Events)',
+      musicianSignature: 'Carlo Reyes',
       signedAt: '2026-06-10',
       status: 'completed',
     },
@@ -196,10 +196,10 @@ async function seed() {
 
   console.log(`📄 Created ${1} archived contract`);
 
-  console.log('\n🌱 Seed complete!');
+  console.log('\n🌱 Seed complete! 🇵🇭');
   console.log(`\nMock user IDs for Phase 1 hardcoded auth:`);
-  console.log(`  Organizer (Sarah Jenkins): ${sarah._id}`);
-  console.log(`  Musician  (Leo Mercer):    ${leo._id}`);
+  console.log(`  Organizer (Maria Santos): ${maria._id}`);
+  console.log(`  Musician  (Carlo Reyes):  ${carlo._id}`);
 
   await mongoose.disconnect();
   process.exit(0);

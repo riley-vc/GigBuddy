@@ -14,6 +14,7 @@ import {
   UserCheck,
   BadgeCheck,
   X,
+  MessageSquare,
 } from 'lucide-react';
 
 // Instrument icon helper
@@ -104,7 +105,7 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-zinc-100 truncate">{gig.title}</p>
-                        <p className="text-[10px] font-mono text-zinc-500 truncate">{gig.venueName} · ${gig.budget}</p>
+                        <p className="text-[10px] font-mono text-zinc-500 truncate">{gig.venueName} · ₱{gig.budget?.toLocaleString()}</p>
                         {invited && (
                           <span className="text-[9px] text-emerald-400 font-mono uppercase">✓ Already Invited</span>
                         )}
@@ -167,6 +168,7 @@ export default function ArtistMarketplace({
   gigs,
   applications,
   onInvite,
+  onOpenInviteChat,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInstrument, setSelectedInstrument] = useState('All');
@@ -176,6 +178,8 @@ export default function ArtistMarketplace({
   );
   const [inviteTarget, setInviteTarget] = useState(null); // musician being invited
   const [successIds, setSuccessIds] = useState(new Set()); // musician IDs that got invited
+  // Map: musicianId → conversationId returned from the invite
+  const [inviteConvoMap, setInviteConvoMap] = useState({});
 
   // Build filter options
   const allInstruments = useMemo(() => {
@@ -223,8 +227,12 @@ export default function ArtistMarketplace({
   const handleSendInvite = async (gigId, note) => {
     if (!inviteTarget) return;
     const musicianId = inviteTarget._id || inviteTarget.id;
-    await onInvite(gigId, inviteTarget, note);
+    const result = await onInvite(gigId, inviteTarget, note);
     setSuccessIds((prev) => new Set(prev).add(musicianId));
+    // Store the conversationId if the server returned one
+    if (result?.conversationId) {
+      setInviteConvoMap((prev) => ({ ...prev, [musicianId]: result.conversationId }));
+    }
     setInviteTarget(null);
   };
 
@@ -487,9 +495,21 @@ export default function ArtistMarketplace({
               {/* CTA */}
               <div className="px-6 pb-6">
                 {successIds.has(selectedArtist._id || selectedArtist.id) ? (
-                  <div className="w-full bg-emerald-500/10 border border-emerald-500/15 p-3.5 rounded-xl text-emerald-400 text-center text-sm font-semibold flex items-center justify-center gap-2">
-                    <Check className="w-4 h-4" />
-                    Invitation Sent! Waiting for artist to respond.
+                  <div className="space-y-2">
+                    <div className="w-full bg-emerald-500/10 border border-emerald-500/15 p-3 rounded-xl text-emerald-400 text-sm font-semibold flex items-center justify-center gap-2">
+                      <Check className="w-4 h-4" />
+                      Invitation Sent!
+                    </div>
+                    {inviteConvoMap[selectedArtist._id || selectedArtist.id] && onOpenInviteChat && (
+                      <button
+                        id={`open-chat-${selectedArtist._id || selectedArtist.id}`}
+                        onClick={() => onOpenInviteChat(inviteConvoMap[selectedArtist._id || selectedArtist.id])}
+                        className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 font-semibold rounded-xl py-2.5 text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <MessageSquare className="w-4 h-4 text-violet-400" />
+                        Open Chat with {selectedArtist.name?.split(' ')[0]}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <button

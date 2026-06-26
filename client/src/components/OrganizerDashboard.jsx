@@ -113,7 +113,7 @@ export default function OrganizerDashboard({
                           }`}>
                             {gig.status === 'open' ? 'Sourcing Artists' : gig.status === 'filled' ? 'Booked & Locked' : 'Cancelled'}
                           </span>
-                          <span className="font-mono font-bold text-emerald-400 text-sm">${gig.budget}</span>
+                          <span className="font-mono font-bold text-emerald-400 text-sm">₱{gig.budget?.toLocaleString()}</span>
                         </div>
 
                         <div>
@@ -241,7 +241,7 @@ export default function OrganizerDashboard({
                           {associatedGig && (
                             <div className="text-right hidden md:block mb-1.5">
                               <span className="text-[10px] text-zinc-500 block font-mono">Offer payout</span>
-                              <span className="text-sm font-bold text-emerald-400 font-mono">${associatedGig.budget}</span>
+                              <span className="text-sm font-bold text-emerald-400 font-mono">₱{associatedGig.budget?.toLocaleString()}</span>
                             </div>
                           )}
                           <div className="flex gap-2 w-full md:w-auto">
@@ -294,7 +294,7 @@ export default function OrganizerDashboard({
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-400 mt-1 font-mono">
                           <span>Venue: {contract.venueName}</span>
                           <span className="text-zinc-700">•</span>
-                          <span>Compensation: <strong className="text-emerald-400">${contract.compensation}</strong></span>
+                          <span>Compensation: <strong className="text-emerald-400">₱{contract.compensation?.toLocaleString()}</strong></span>
                         </div>
                       </div>
                     </div>

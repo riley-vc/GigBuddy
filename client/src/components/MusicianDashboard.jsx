@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Calendar, DollarSign, Hourglass, CheckSquare, Music, Plus, X, ToggleLeft } from 'lucide-react';
+import InvitationInbox from './InvitationInbox.jsx';
 
 export default function MusicianDashboard({
   profile,
   gigs,
   applications,
   contracts,
+  conversations,
   onUpdateAvailability,
   onAddBand,
   onRemoveBand,
+  onOpenChat,
 }) {
   const [newBandName, setNewBandName] = useState('');
 
@@ -20,6 +23,12 @@ export default function MusicianDashboard({
   );
   const pendingCount = myApplications.filter((a) => a.status === 'pending').length;
   const projectedEarnings = myContracts.reduce((acc, c) => acc + (c.compensation || 0), 0);
+
+  // Unread invitations count from conversations
+  const myConversations = (conversations || []).filter(
+    (c) => c.musicianId?.toString() === profile._id || c.musicianId === profile._id
+  );
+  const unreadInvites = myConversations.reduce((sum, c) => sum + (c.unreadMusician || 0), 0);
 
   const handleAddBandSubmit = (e) => {
     e.preventDefault();
@@ -65,7 +74,7 @@ export default function MusicianDashboard({
         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
           <div className="space-y-1">
             <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Projected Earnings</span>
-            <span className="text-3xl font-extrabold text-emerald-400 block">${projectedEarnings}</span>
+            <span className="text-3xl font-extrabold text-emerald-400 block">₱{projectedEarnings?.toLocaleString()}</span>
             <span className="text-[10px] text-emerald-400/80 block bg-emerald-500/5 py-0.5 px-1.5 rounded inline-block">Secure in escrow</span>
           </div>
           <div className="w-12 h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/10 flex items-center justify-center text-emerald-400">
@@ -75,8 +84,16 @@ export default function MusicianDashboard({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Availability & Bands */}
+        {/* Left: Invitation Inbox + Availability + Bands */}
         <div className="lg:col-span-7 space-y-6">
+
+          {/* ── Invitation Inbox ─────────────────────────────────────────────── */}
+          <InvitationInbox
+            conversations={myConversations}
+            applications={myApplications}
+            onOpenChat={onOpenChat}
+          />
+
           {/* Availability Tracker */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-md">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-800">

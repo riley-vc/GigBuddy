@@ -41,7 +41,7 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
             </div>
             <div>
               <h3 className="font-semibold text-zinc-50 text-lg">Memorandum of Agreement</h3>
-              <p className="text-xs text-zinc-400">GigBuddy Standard Legal MoA & Escrow Lock</p>
+              <p className="text-xs text-zinc-400">GigBag Standard Legal MoA & Escrow Lock</p>
             </div>
           </div>
           <button
@@ -62,8 +62,8 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
               <h4 className="font-semibold text-zinc-100 text-xs uppercase tracking-wider">Escrow Security Escort</h4>
               <p className="text-xs text-zinc-400 mt-1">
                 Upon fully signing this document, the designated talent budget of{' '}
-                <strong className="text-emerald-400">${contract.compensation}</strong> will be locked in
-                GigBuddy's secure escrow contract. Funds are released 24 hours post-performance.
+                <strong className="text-emerald-400">₱{contract.compensation?.toLocaleString()}</strong> will be locked in
+                GigBag's secure escrow contract. Funds are released 24 hours post-performance.
               </p>
             </div>
           </div>
@@ -95,11 +95,11 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
             <p>
               <strong>SECTION 3. COMPENSATION & TAXES</strong><br />
               In consideration for full and satisfactory performance, the Client agrees to authorize a total guaranteed flat payment of{' '}
-              <strong>${contract.compensation}.00 USD</strong>. All payments clear through the GigBuddy Escrow mechanism.
+              <strong>₱{contract.compensation?.toLocaleString()} PHP</strong>. All payments clear through the GigBag Escrow mechanism.
             </p>
             <p>
               <strong>SECTION 4. FORCE MAJEURE & CANCELLATION</strong><br />
-              Either party may cancel this engagement without liability if performance is rendered impossible due to natural disasters, sudden venue closures, or other unforeseen acts, provided notice is sent through GigBuddy at least 48 hours prior.
+              Either party may cancel this engagement without liability if performance is rendered impossible due to natural disasters, sudden venue closures, or other unforeseen acts, provided notice is sent through GigBag at least 48 hours prior.
             </p>
           </div>
 
@@ -150,7 +150,7 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
                 <input
                   id="moa-signature-input"
                   type="text"
-                  placeholder="e.g. Leo Mercer"
+                  placeholder="e.g. Carlo Reyes"
                   value={signatureText}
                   onChange={(e) => setSignatureText(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 text-zinc-50 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
@@ -166,7 +166,7 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
                   className="mt-0.5 rounded border-zinc-800 bg-zinc-900 text-violet-600 cursor-pointer"
                 />
                 <span className="text-xs text-zinc-400 select-none">
-                  I certify that I am authorized to execute this agreement, and understand that GigBuddy will lock/secure budget funds in an escrow transaction state.
+                  I certify that I am authorized to execute this agreement, and understand that GigBag will lock/secure budget funds in an escrow transaction state.
                 </span>
               </label>
 

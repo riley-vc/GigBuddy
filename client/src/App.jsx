@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { io } from 'socket.io-client';
 import {
   Briefcase,
   Users,
@@ -13,6 +14,7 @@ import { getGigs, createGig, updateGigStatus } from './api/gigs.js';
 import { getApplications, createApplication, updateApplicationStatus } from './api/applications.js';
 import { getContracts, createContract, signContract } from './api/contracts.js';
 import { getUsers } from './api/users.js';
+import { getConversations, getMessages, markConversationRead } from './api/conversations.js';
 
 import RoleToggle from './components/RoleToggle.jsx';
 import Header from './components/Header.jsx';
@@ -22,6 +24,7 @@ import OrganizerDashboard from './components/OrganizerDashboard.jsx';
 import MusicianDashboard from './components/MusicianDashboard.jsx';
 import GigMarketplace from './components/GigMarketplace.jsx';
 import ArtistMarketplace from './components/ArtistMarketplace.jsx';
+import ChatDrawer from './components/ChatDrawer.jsx';
 
 // ─── Phase 1 Mock Auth ─────────────────────────────────────────────────────────
 // These IDs are printed by seed.js — swap them after running the seed script.
@@ -55,6 +58,9 @@ const MOCK_MUSICIAN = {
 };
 // ──────────────────────────────────────────────────────────────────────────────
 
+// Socket singleton — created once, reused across re-renders
+const SOCKET_URL = 'http://localhost:4000';
+
 export default function App() {
   // ── Role & Navigation ─────────────────────────────────────────────────────
   const [role, setRole] = useState('organizer');
@@ -66,8 +72,16 @@ export default function App() {
   const [applications, setApplications] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [musicians, setMusicians] = useState([]);
+  const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // ── Chat State ────────────────────────────────────────────────────────────
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [activeChatConvoId, setActiveChatConvoId] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]); // messages for the active conversation
+  const [chatLoading, setChatLoading] = useState(false);
+  const socketRef = useRef(null);
 
   // ── Musician local profile state (Phase 1 — will come from DB in Phase 2) ─
   const [profile, setProfile] = useState(MOCK_MUSICIAN);
@@ -76,6 +90,55 @@ export default function App() {
   const [isMoaModalOpen, setIsMoaModalOpen] = useState(false);
   const [draftContract, setDraftContract] = useState({});
   const [signingTargetAppId, setSigningTargetAppId] = useState(null);
+
+  // ── Initialise Socket.io ──────────────────────────────────────────────────
+  useEffect(() => {
+    const currentUser = role === 'organizer' ? MOCK_ORGANIZER : MOCK_MUSICIAN;
+
+    // Phase 1: send mock userId + role in the handshake auth
+    // Phase 2: send real JWT token here instead
+    const socket = io(SOCKET_URL, {
+      auth: { userId: currentUser._id, role: currentUser.role },
+      transports: ['websocket'],
+    });
+
+    socketRef.current = socket;
+
+    // Incoming message from server — append to active chat
+    socket.on('chat:receive', (message) => {
+      setChatMessages((prev) => {
+        // Avoid duplicates (can happen if sender is also in the room)
+        if (prev.some((m) => m._id === message._id?.toString())) return prev;
+        return [...prev, message];
+      });
+    });
+
+    // Conversation metadata changed (unread counts etc.) — refresh conversation list
+    socket.on('conversation:updated', ({ conversationId }) => {
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (c._id !== conversationId) return c;
+          // Optimistic clear of unread for the current role if this convo is open
+          if (activeChatConvoId === conversationId) {
+            return {
+              ...c,
+              unreadOrganizer: role === 'organizer' ? 0 : c.unreadOrganizer,
+              unreadMusician: role === 'musician' ? 0 : c.unreadMusician,
+            };
+          }
+          return c;
+        })
+      );
+      // Full refresh happens on loadData — do a lightweight conversations-only refresh
+      refreshConversations();
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]); // Re-connect with new role when user toggles
 
   // ── Load all data from the API ────────────────────────────────────────────
   const loadData = useCallback(async () => {
@@ -88,18 +151,38 @@ export default function App() {
         getUsers({ role: 'musician' }),
       ]);
 
-      // Normalize _id → id for component compatibility
       setGigs(gigsData.map(normalizeId));
       setApplications(appsData.map(normalizeApp));
       setContracts(contractsData.map(normalizeId));
       setMusicians(musiciansData.map(normalizeId));
+
+      // Load conversations for both users (mock: organizer + musician)
+      await refreshConversations();
     } catch (err) {
       setError('Could not connect to the GigBuddy API. Make sure the server is running.');
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const refreshConversations = async () => {
+    try {
+      // Fetch conversations for both mock users so role-toggle works instantly
+      const [orgConvos, musConvos] = await Promise.all([
+        getConversations({ organizerId: MOCK_ORGANIZER._id }),
+        getConversations({ musicianId: MOCK_MUSICIAN._id }),
+      ]);
+      // Merge and deduplicate by _id
+      const merged = [...orgConvos];
+      musConvos.forEach((c) => {
+        if (!merged.find((m) => m._id === c._id)) merged.push(c);
+      });
+      setConversations(merged);
+    } catch (err) {
+      console.warn('Could not load conversations:', err.message);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -109,6 +192,99 @@ export default function App() {
   const escrowTotal = contracts
     .filter((c) => c.status === 'fully_signed')
     .reduce((sum, c) => sum + (c.compensation || 0), 0);
+
+  // ── Compute unread message count for current role ─────────────────────────
+  const unreadMessages = conversations.reduce((sum, c) => {
+    return sum + (role === 'organizer' ? (c.unreadOrganizer || 0) : (c.unreadMusician || 0));
+  }, 0);
+
+  // ── Active conversation object ────────────────────────────────────────────
+  const activeConversation = conversations.find((c) => c._id === activeChatConvoId) || null;
+
+  // ── Open chat drawer ──────────────────────────────────────────────────────
+  const handleOpenChat = useCallback(async (conversationId) => {
+    setActiveChatConvoId(conversationId);
+    setIsChatOpen(true);
+    setChatLoading(true);
+
+    try {
+      const msgs = await getMessages(conversationId);
+      setChatMessages(msgs);
+    } catch (err) {
+      console.error('Failed to load messages:', err.message);
+      setChatMessages([]);
+    } finally {
+      setChatLoading(false);
+    }
+
+    // Join socket room
+    if (socketRef.current) {
+      socketRef.current.emit('chat:join', conversationId);
+    }
+
+    // Mark as read
+    const currentUser = role === 'organizer' ? MOCK_ORGANIZER : MOCK_MUSICIAN;
+    try {
+      await markConversationRead(conversationId, role);
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === conversationId
+            ? {
+              ...c, unreadOrganizer: role === 'organizer' ? 0 : c.unreadOrganizer,
+              unreadMusician: role === 'musician' ? 0 : c.unreadMusician
+            }
+            : c
+        )
+      );
+      if (socketRef.current) {
+        socketRef.current.emit('chat:read', { conversationId, role });
+      }
+    } catch (err) {
+      console.warn('Could not mark conversation as read:', err.message);
+    }
+  }, [role]);
+
+  const handleCloseChat = useCallback(() => {
+    if (activeChatConvoId && socketRef.current) {
+      socketRef.current.emit('chat:leave', activeChatConvoId);
+    }
+    setIsChatOpen(false);
+    setActiveChatConvoId(null);
+    setChatMessages([]);
+  }, [activeChatConvoId]);
+
+  // Open the most-recently-active conversation (header bell)
+  const handleOpenMostRecentChat = useCallback(() => {
+    const sorted = [...conversations].sort(
+      (a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
+    );
+    if (sorted.length > 0) {
+      handleOpenChat(sorted[0]._id);
+    }
+  }, [conversations, handleOpenChat]);
+
+  // ── Send a chat message ───────────────────────────────────────────────────
+  const handleSendMessage = useCallback((content) => {
+    if (!activeChatConvoId || !socketRef.current) return;
+    const currentUser = role === 'organizer' ? MOCK_ORGANIZER : MOCK_MUSICIAN;
+
+    return new Promise((resolve, reject) => {
+      socketRef.current.emit(
+        'chat:send',
+        {
+          conversationId: activeChatConvoId,
+          senderId: currentUser._id,
+          senderRole: role,
+          senderName: currentUser.name,
+          content,
+        },
+        (ack) => {
+          if (ack?.success) resolve(ack.data);
+          else reject(new Error(ack?.error || 'Send failed'));
+        }
+      );
+    });
+  }, [activeChatConvoId, role]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -125,8 +301,12 @@ export default function App() {
         coverNote,
         sampleVideoUrl: profile.videoUrl || '',
         initiatedBy: 'musician',
+        organizerId: MOCK_ORGANIZER._id,
+        organizerName: MOCK_ORGANIZER.name,
       });
       setApplications((prev) => [normalizeApp(app), ...prev]);
+      // Refresh conversations so musician sees their sent application thread
+      await refreshConversations();
     } catch (err) {
       alert(`Failed to submit application: ${err.message}`);
     }
@@ -147,9 +327,7 @@ export default function App() {
       organizerId: MOCK_ORGANIZER._id,
       gigTitle: associatedGig.title,
       venueName: associatedGig.venueName,
-      date: associatedGig.date
-        ? new Date(associatedGig.date).toLocaleDateString()
-        : '',
+      date: associatedGig.date ? new Date(associatedGig.date).toLocaleDateString() : '',
       compensation: associatedGig.budget,
       organizerSignature: '',
       musicianSignature: '',
@@ -164,7 +342,7 @@ export default function App() {
   // 3. Sign contract — creates DB record, updates application + gig status
   const handleSignContract = async (signature) => {
     try {
-      const newContract = await createContract({
+      await createContract({
         ...draftContract,
         organizerSignature: role === 'organizer' ? signature : (draftContract.organizerSignature || ''),
         musicianSignature: role === 'musician' ? signature : (draftContract.musicianSignature || ''),
@@ -172,7 +350,7 @@ export default function App() {
         signedAt: new Date().toLocaleDateString(),
       });
 
-      await loadData(); // Refresh all data from server
+      await loadData();
 
       setIsMoaModalOpen(false);
       setDraftContract({});
@@ -228,6 +406,7 @@ export default function App() {
   };
 
   // 11. Organizer invites a musician directly
+  // Returns the result (with conversationId) so ArtistMarketplace can open chat
   const handleInviteMusician = async (gigId, musician, note) => {
     try {
       const app = await createApplication({
@@ -237,16 +416,19 @@ export default function App() {
         musicianAvatar: musician.avatar || '',
         instrument: (musician.instruments || [])[0] || '',
         skills: [],
-        coverNote: note || `Direct invitation from event planner Sarah Jenkins.`,
+        coverNote: note || `Direct invitation from event planner ${MOCK_ORGANIZER.name}.`,
         initiatedBy: 'organizer',
+        organizerId: MOCK_ORGANIZER._id,
+        organizerName: MOCK_ORGANIZER.name,
       });
       setApplications((prev) => [normalizeApp(app), ...prev]);
+      await refreshConversations();
+      // Return app so caller can extract conversationId
+      return app;
     } catch (err) {
-      if (err.message?.includes('Already applied')) {
-        // silently ignore duplicate — ArtistMarketplace already prevents this in the UI
-        return;
-      }
+      if (err.message?.includes('Already applied')) return null;
       alert(`Failed to send invitation: ${err.message}`);
+      return null;
     }
   };
 
@@ -305,6 +487,11 @@ export default function App() {
 
   const currentUser = role === 'organizer' ? MOCK_ORGANIZER : profile;
 
+  // Musician tab unread badge
+  const musicianUnread = conversations
+    .filter((c) => c.musicianId?.toString() === MOCK_MUSICIAN._id)
+    .reduce((s, c) => s + (c.unreadMusician || 0), 0);
+
   return (
     <div id="gigbuddy-app-root" className="min-h-screen bg-zinc-950 text-zinc-50 font-sans flex flex-col justify-between" style={{ fontFamily: "'Inter', sans-serif" }}>
 
@@ -314,6 +501,8 @@ export default function App() {
         userName={currentUser.name}
         userAvatar={currentUser.avatar}
         escrowTotal={escrowTotal}
+        unreadMessages={unreadMessages}
+        onOpenChat={handleOpenMostRecentChat}
       />
 
       {/* 2. Main Content */}
@@ -331,8 +520,8 @@ export default function App() {
                   id="tab-organizer-dashboard"
                   onClick={() => setOrganizerTab('dashboard')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'dashboard'
-                      ? 'bg-zinc-800 text-zinc-50 font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-zinc-800 text-zinc-50 font-bold'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                     }`}
                 >
                   <Briefcase className="w-3.5 h-3.5" />
@@ -342,8 +531,8 @@ export default function App() {
                   id="tab-organizer-artists"
                   onClick={() => setOrganizerTab('artist_marketplace')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'artist_marketplace'
-                      ? 'bg-zinc-800 text-zinc-50 font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-zinc-800 text-zinc-50 font-bold'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                     }`}
                 >
                   <Store className="w-3.5 h-3.5 text-fuchsia-400" />
@@ -353,8 +542,8 @@ export default function App() {
                   id="tab-organizer-create"
                   onClick={() => setOrganizerTab('create_gig')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'create_gig'
-                      ? 'bg-zinc-800 text-zinc-50 font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-zinc-800 text-zinc-50 font-bold'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                     }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-violet-400" />
@@ -367,8 +556,8 @@ export default function App() {
                   id="tab-musician-marketplace"
                   onClick={() => setMusicianTab('find_gigs')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${musicianTab === 'find_gigs'
-                      ? 'bg-zinc-800 text-zinc-50 font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-zinc-800 text-zinc-50 font-bold'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                     }`}
                 >
                   <Compass className="w-3.5 h-3.5" />
@@ -377,13 +566,18 @@ export default function App() {
                 <button
                   id="tab-musician-dashboard"
                   onClick={() => setMusicianTab('dashboard')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${musicianTab === 'dashboard'
-                      ? 'bg-zinc-800 text-zinc-50 font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                  className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${musicianTab === 'dashboard'
+                    ? 'bg-zinc-800 text-zinc-50 font-bold'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                     }`}
                 >
                   <Users className="w-3.5 h-3.5" />
                   Musician Dashboard
+                  {musicianUnread > 0 && (
+                    <span className="ml-0.5 px-1.5 py-0.5 bg-violet-600 text-white text-[9px] font-bold rounded-full">
+                      {musicianUnread}
+                    </span>
+                  )}
                 </button>
               </>
             )}
@@ -413,6 +607,7 @@ export default function App() {
                 gigs={gigs}
                 applications={applications}
                 onInvite={handleInviteMusician}
+                onOpenInviteChat={handleOpenChat}
               />
             ) : (
               <GigCreatorForm
@@ -434,9 +629,11 @@ export default function App() {
                 gigs={gigs}
                 applications={applications}
                 contracts={contracts}
+                conversations={conversations}
                 onUpdateAvailability={handleUpdateAvailability}
                 onAddBand={handleAddBand}
                 onRemoveBand={handleRemoveBand}
+                onOpenChat={handleOpenChat}
               />
             )
           )}
@@ -460,11 +657,11 @@ export default function App() {
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
             {[
-              ['01. PLANNER PORTAL', 'Click Review Candidates on the Planner tab. Inspect applications & cover notes.'],
-              ['02. SIGN THE MoA', 'Click Approve & Draft MoA. Type your name, agree, and sign to lock escrow!'],
-              ['03. SWITCH TO MUSICIAN', 'Use the top switch to toggle role to Live Musician.'],
-              ['04. APPLY IN FEED', 'Go to Find Live Gigs, select a gig, and apply with your active profile.'],
-              ['05. RE-VET CANDIDATES', 'Switch back to Planner. Your new application appears instantly to review!'],
+              ['01. INVITE ARTIST', 'Go to Artist Marketplace → pick a musician → Send Direct Invitation with a personal note.'],
+              ['02. OPEN CHAT', 'After inviting, click "Open Chat" to start a real-time conversation with that artist.'],
+              ['03. SWITCH TO MUSICIAN', 'Toggle role to Live Musician → Musician Dashboard → check Planner Invitations inbox.'],
+              ['04. REPLY IN INBOX', 'Open the invitation card — the chat drawer opens. Reply to the planner in real-time!'],
+              ['05. SIGN THE MoA', 'Back in Planner mode, approve the application → Draft MoA → Sign to lock escrow.'],
             ].map(([step, desc]) => (
               <div key={step} className="p-3 bg-zinc-950 border border-zinc-800 rounded-lg space-y-1">
                 <span className="font-mono text-violet-400 font-bold block">{step}</span>
@@ -482,6 +679,18 @@ export default function App() {
         contract={draftContract}
         onSign={handleSignContract}
         role={role}
+      />
+
+      {/* Chat Drawer */}
+      <ChatDrawer
+        isOpen={isChatOpen}
+        onClose={handleCloseChat}
+        conversation={activeConversation}
+        messages={chatMessages}
+        currentUserId={role === 'organizer' ? MOCK_ORGANIZER._id : MOCK_MUSICIAN._id}
+        currentRole={role}
+        onSend={handleSendMessage}
+        loading={chatLoading}
       />
 
       {/* Footer */}
@@ -502,7 +711,6 @@ function normalizeId(obj) {
 
 function normalizeApp(app) {
   const base = normalizeId(app);
-  // Resolve populated gigId object or plain ID string
   return {
     ...base,
     gigId: app.gigId?._id || app.gigId,

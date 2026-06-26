@@ -119,7 +119,7 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
                     <span className="font-mono text-[10px] font-bold text-violet-400 bg-violet-500/5 px-2 py-0.5 rounded uppercase tracking-wider">
                       {(gig.genres || [])[0] || 'Open Call'}
                     </span>
-                    <span className="font-mono font-bold text-emerald-400 text-xs">${gig.budget}</span>
+                    <span className="font-mono font-bold text-emerald-400 text-xs">₱{gig.budget?.toLocaleString()}</span>
                   </div>
 
                   <h4 className="font-bold text-zinc-50 text-sm line-clamp-1 leading-snug">{gig.title}</h4>
@@ -169,7 +169,7 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-lg">
                     <span className="text-zinc-500 text-[10px] uppercase font-mono block mb-1">Talent Budget</span>
-                    <span className="text-base font-bold text-emerald-400 font-mono">${selectedGig.budget}</span>
+                    <span className="text-base font-bold text-emerald-400 font-mono">₱{selectedGig.budget?.toLocaleString()}</span>
                   </div>
                   <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-lg">
                     <span className="text-zinc-500 text-[10px] uppercase font-mono block mb-1">Target Instruments</span>

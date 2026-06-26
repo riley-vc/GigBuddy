@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Calendar, Clock, DollarSign, MapPin, Plus, Check, Info, FilePlus2, Sparkles } from 'lucide-react';
 
-const GENRE_PRESETS = ['Jazz', 'Rock', 'Acoustic', 'Blues', 'Funk', 'Heavy Metal', 'Pop-Punk', 'Classical-Crossover', 'Electronic', 'Synthwave', 'Folk', 'Hip-Hop'];
-const INSTRUMENT_PRESETS = ['Double Bass', 'Electric Guitar (Lead)', 'Violin', 'Drums (Sessionist)', 'Keyboardist', 'Vocalist (Lead)', 'Alto Saxophone', 'Trumpet', 'Cello'];
-const BACKLINE_PRESETS = ['Acoustic Grand Piano', 'Yamaha Maple Custom Drum Kit', 'Marshall JCM800 Half-Stack', 'Gallien-Krueger Bass Amp', 'Bose L1 Compact PA System', 'Direct Box (DI)', 'Vocal Microphone Shure Beta 58A'];
+const GENRE_PRESETS = ['OPM', 'Bisrock', 'P-pop', 'Kundiman', 'Jazz-OPM', 'Alternative OPM', 'Acoustic OPM', 'Indie PH', 'Electronic', 'Rock PH', 'Folk PH', 'R&B PH'];
+const INSTRUMENT_PRESETS = ['Acoustic Guitar', 'Electric Guitar', 'Bass Guitar', 'Drums', 'Vocals (Lead)', 'Keyboard', 'Piano', 'Violin', 'Alto Saxophone', 'Cajon', 'Trumpet'];
+const BACKLINE_PRESETS = ['Roland FP-90 Digital Piano', 'Yamaha Stage Custom Drum Kit', 'Marshall DSL40CR Combo', 'Hartke HD75 Bass Combo', 'Bose L1 Compact PA System', 'DI Box (Radial)', 'Shure SM58 Vocal Mic', 'Shure SM137 Instrument Mic'];
 
 export default function GigCreatorForm({ onCreateGig, onSuccess }) {
   const [title, setTitle] = useState('');
@@ -209,16 +209,16 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
 
           {/* Budget */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Talent Fee Budget ($)</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Talent Fee Budget (₱ PHP)</label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-3 w-4 h-4 text-emerald-400" />
+              <span className="absolute left-3 top-2.5 text-emerald-400 font-bold text-sm">₱</span>
               <input
                 id="input-budget"
                 type="number"
-                placeholder="e.g. 500"
+                placeholder="e.g. 12000"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 text-emerald-400 font-bold rounded-lg py-2.5 pl-10 pr-3.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors"
+                className="w-full bg-zinc-950 border border-zinc-800 text-emerald-400 font-bold rounded-lg py-2.5 pl-8 pr-3.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors"
               />
             </div>
             <p className="text-[10px] text-zinc-500 mt-1.5">This fee will be held in secure escrow to protect performance clauses.</p>
