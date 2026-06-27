@@ -497,7 +497,7 @@ export default function App() {
     .reduce((s, c) => s + (c.unreadMusician || 0), 0);
 
   return (
-    <div id="gigbuddy-app-root" className="min-h-screen bg-zinc-950 text-zinc-50 font-sans flex flex-col justify-between" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div id="gigbuddy-app-root" className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col justify-between" style={{ fontFamily: "'Inter', sans-serif" }}>
 
       {/* 1. Header */}
       <Header
@@ -515,7 +515,7 @@ export default function App() {
           id="btn-logout"
           onClick={logout}
           title="Log out"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/90 border border-zinc-700/60 hover:border-red-500/50 text-zinc-400 hover:text-red-400 text-xs font-semibold rounded-lg backdrop-blur-sm transition-all cursor-pointer shadow-lg"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 border border-gray-200 hover:border-red-300 text-gray-500 hover:text-red-600 text-xs font-semibold rounded-lg backdrop-blur-sm transition-all cursor-pointer shadow-sm"
         >
           <LogOut className="w-3.5 h-3.5" />
           Logout
@@ -529,7 +529,7 @@ export default function App() {
         <RoleToggle role={role} onChange={(selected) => setRole(selected)} />
 
         {/* Nav Tabs */}
-        <div id="role-dependent-tabs" className="bg-zinc-900/60 p-1.5 rounded-xl border border-zinc-800/80 flex items-center justify-between gap-4">
+        <div id="role-dependent-tabs" className="bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4">
           <div className="flex gap-1">
             {role === 'organizer' ? (
               <>
@@ -537,8 +537,8 @@ export default function App() {
                   id="tab-organizer-dashboard"
                   onClick={() => setOrganizerTab('dashboard')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'dashboard'
-                    ? 'bg-zinc-800 text-zinc-50 font-bold'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
                     }`}
                 >
                   <Briefcase className="w-3.5 h-3.5" />
@@ -548,22 +548,22 @@ export default function App() {
                   id="tab-organizer-artists"
                   onClick={() => setOrganizerTab('artist_marketplace')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'artist_marketplace'
-                    ? 'bg-zinc-800 text-zinc-50 font-bold'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
                     }`}
                 >
-                  <Store className="w-3.5 h-3.5 text-fuchsia-400" />
+                  <Store className="w-3.5 h-3.5" />
                   Artist Marketplace
                 </button>
                 <button
                   id="tab-organizer-create"
                   onClick={() => setOrganizerTab('create_gig')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${organizerTab === 'create_gig'
-                    ? 'bg-zinc-800 text-zinc-50 font-bold'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
                     }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   Publish Open Gig Call
                 </button>
               </>
@@ -573,8 +573,8 @@ export default function App() {
                   id="tab-musician-marketplace"
                   onClick={() => setMusicianTab('find_gigs')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${musicianTab === 'find_gigs'
-                    ? 'bg-zinc-800 text-zinc-50 font-bold'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
                     }`}
                 >
                   <Compass className="w-3.5 h-3.5" />
@@ -584,14 +584,14 @@ export default function App() {
                   id="tab-musician-dashboard"
                   onClick={() => setMusicianTab('dashboard')}
                   className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${musicianTab === 'dashboard'
-                    ? 'bg-zinc-800 text-zinc-50 font-bold'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
                     }`}
                 >
                   <Users className="w-3.5 h-3.5" />
                   Musician Dashboard
                   {musicianUnread > 0 && (
-                    <span className="ml-0.5 px-1.5 py-0.5 bg-violet-600 text-white text-[9px] font-bold rounded-full">
+                    <span className="ml-0.5 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold rounded-full">
                       {musicianUnread}
                     </span>
                   )}
@@ -600,8 +600,8 @@ export default function App() {
             )}
           </div>
 
-          <div className="text-xs text-zinc-500 font-mono hidden md:block">
-            Mode: <span className="text-violet-400 font-semibold">{role === 'organizer' ? 'Planner Portal' : 'Artist Feed'}</span>
+          <div className="text-xs text-gray-400 font-mono hidden md:block">
+            Mode: <span className="text-indigo-600 font-semibold">{role === 'organizer' ? 'Planner Portal' : 'Artist Feed'}</span>
           </div>
         </div>
 
@@ -658,16 +658,16 @@ export default function App() {
         </div>
 
         {/* Interactive Sandbox Guide */}
-        <div id="sandbox-walkthrough-panel" className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl space-y-4 shadow-xl">
-          <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-            <h4 className="font-bold text-sm text-zinc-200 flex items-center gap-2">
-              <PlayCircle className="w-4 h-4 text-violet-400" />
+        <div id="sandbox-walkthrough-panel" className="bg-white border border-gray-200 p-5 rounded-xl space-y-4 shadow-sm">
+          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+            <h4 className="font-bold text-sm text-gray-800 flex items-center gap-2">
+              <PlayCircle className="w-4 h-4 text-indigo-500" />
               Sandbox Interactive Flow Guide
             </h4>
             <button
               id="btn-refresh-data"
               onClick={loadData}
-              className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 bg-zinc-950 border border-zinc-800 px-2.5 py-1 rounded transition-colors cursor-pointer"
+              className="text-[10px] font-mono text-gray-500 hover:text-gray-700 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded transition-colors cursor-pointer"
             >
               Refresh Data
             </button>
@@ -681,9 +681,9 @@ export default function App() {
               ['04. REPLY IN INBOX', 'Open the invitation card — the chat drawer opens. Reply to the planner in real-time!'],
               ['05. SIGN THE MoA', 'Back in Planner mode, approve the application → Draft MoA → Sign to lock escrow.'],
             ].map(([step, desc]) => (
-              <div key={step} className="p-3 bg-zinc-950 border border-zinc-800 rounded-lg space-y-1">
-                <span className="font-mono text-violet-400 font-bold block">{step}</span>
-                <p className="text-zinc-400 leading-relaxed">{desc}</p>
+              <div key={step} className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg space-y-1">
+                <span className="font-mono text-indigo-600 font-bold block">{step}</span>
+                <p className="text-gray-500 leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -721,9 +721,9 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer id="app-footer" className="border-t border-zinc-800 bg-zinc-950 py-5 text-center text-[10px] font-mono text-zinc-600">
+      <footer id="app-footer" className="border-t border-gray-200 bg-white py-5 text-center text-[10px] font-mono text-gray-400">
         <div className="max-w-7xl mx-auto px-4">
-          <span>GigBuddy Entertainment Marketplace Systems • MERN Stack • Phase 1 MVP</span>
+          <span>GigBag Entertainment Marketplace Systems • MERN Stack • Phase 1 MVP</span>
         </div>
       </footer>
     </div>

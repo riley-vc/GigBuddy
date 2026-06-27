@@ -15,14 +15,13 @@ export default function LoginPage({ onSwitchToRegister }) {
     e.preventDefault();
     setError('');
 
-    // Basic client-side validation
     if (!email.trim())    return setError('Email is required.');
     if (!password.trim()) return setError('Password is required.');
 
     setLoading(true);
     try {
       const user = await loginApi(email.trim(), password);
-      login(user); // persist to context + localStorage
+      login(user);
     } catch (err) {
       setError(err.message || 'Something went wrong.');
     } finally {
@@ -31,30 +30,30 @@ export default function LoginPage({ onSwitchToRegister }) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-      {/* Background glow */}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      {/* Subtle background accent */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-fuchsia-600/10 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-100/60 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-50/80 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md">
         {/* Logo / branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-violet-600/20 border border-violet-500/30 mb-4">
-            <Music2 className="w-7 h-7 text-violet-400" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/25 mb-4">
+            <Music2 className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-50 tracking-tight">Welcome to GigBag</h1>
-          <p className="text-sm text-zinc-400 mt-1">Log in to your account to continue</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Welcome to GigBag</h1>
+          <p className="text-sm text-gray-500 mt-1">Log in to your account to continue</p>
         </div>
 
         {/* Card */}
-        <div className="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-8 shadow-2xl shadow-black/40">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-lg">
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
 
             {/* Error banner */}
             {error && (
-              <div className="flex items-center gap-2.5 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+              <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -62,11 +61,11 @@ export default function LoginPage({ onSwitchToRegister }) {
 
             {/* Email */}
             <div className="space-y-1.5">
-              <label htmlFor="login-email" className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+              <label htmlFor="login-email" className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 <input
                   id="login-email"
                   type="email"
@@ -74,18 +73,18 @@ export default function LoginPage({ onSwitchToRegister }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/60 border border-zinc-700/60 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500/70 focus:bg-zinc-800 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="login-password" className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+              <label htmlFor="login-password" className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 <input
                   id="login-password"
                   type="password"
@@ -93,7 +92,7 @@ export default function LoginPage({ onSwitchToRegister }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/60 border border-zinc-700/60 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500/70 focus:bg-zinc-800 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
                 />
               </div>
             </div>
@@ -103,7 +102,7 @@ export default function LoginPage({ onSwitchToRegister }) {
               id="btn-login-submit"
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-violet-900/40 mt-2"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-md shadow-indigo-500/20 mt-2"
             >
               {loading ? (
                 <>
@@ -117,12 +116,12 @@ export default function LoginPage({ onSwitchToRegister }) {
           </form>
 
           {/* Switch to Register */}
-          <p className="text-center text-xs text-zinc-500 mt-6">
+          <p className="text-center text-xs text-gray-500 mt-6">
             Don't have an account?{' '}
             <button
               id="btn-switch-to-register"
               onClick={onSwitchToRegister}
-              className="text-violet-400 hover:text-violet-300 font-semibold transition-colors cursor-pointer"
+              className="text-indigo-600 hover:text-indigo-800 font-semibold transition-colors cursor-pointer"
             >
               Create one →
             </button>
@@ -130,17 +129,18 @@ export default function LoginPage({ onSwitchToRegister }) {
         </div>
 
         {/* Seeded account hint */}
-        <div className="mt-6 p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-xl text-center space-y-1">
-          <p className="text-[11px] font-mono text-zinc-500 font-semibold">SEEDED TEST ACCOUNTS</p>
-          <p className="text-[11px] font-mono text-zinc-600">
-            <span className="text-fuchsia-400">Organizer</span> maria@skydeck.com.ph
+        <div className="mt-6 p-4 bg-white border border-gray-200 rounded-xl text-center space-y-1 shadow-sm">
+          <p className="text-[11px] font-mono text-gray-500 font-semibold">SEEDED TEST ACCOUNTS</p>
+          <p className="text-[11px] font-mono text-gray-600">
+            <span className="text-indigo-600 font-semibold">Organizer</span> maria@skydeck.com.ph
           </p>
-          <p className="text-[11px] font-mono text-zinc-600">
-            <span className="text-violet-400">Musician</span> carlo@gigbag.ph
+          <p className="text-[11px] font-mono text-gray-600">
+            <span className="text-indigo-500 font-semibold">Musician</span> carlo@gigbag.ph
           </p>
-          <p className="text-[11px] font-mono text-zinc-700">password: password123</p>
+          <p className="text-[11px] font-mono text-gray-400">password: password123</p>
         </div>
       </div>
     </div>
   );
 }
+

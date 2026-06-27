@@ -14,9 +14,9 @@ export default function MetricCard({ label, value, icon, color = 'violet', trend
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-zinc-400 font-medium">{label}</p>
+        <p className="text-sm text-gray-500 font-medium">{label}</p>
         <p className={`text-3xl font-bold mt-0.5 tracking-tight ${c.val}`}>{value}</p>
-        {trend && <p className="text-xs text-zinc-600 mt-1">{trend}</p>}
+        {trend && <p className="text-xs text-gray-400 mt-1">{trend}</p>}
       </div>
     </div>
   );

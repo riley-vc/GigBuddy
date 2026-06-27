@@ -28,14 +28,14 @@ export default function MusicianCard({ musician, isSelected, onClick }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-zinc-50 truncate">{musician.name}</p>
+        <p className="font-semibold text-gray-900 truncate">{musician.name}</p>
 
         {musician.location && (
-          <p className="text-xs text-zinc-500 mt-0.5 truncate">📍 {musician.location}</p>
+          <p className="text-xs text-gray-500 mt-0.5 truncate">📍 {musician.location}</p>
         )}
 
         {musician.bio && (
-          <p className="text-xs text-zinc-400 mt-2 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed">
             {musician.bio}
           </p>
         )}

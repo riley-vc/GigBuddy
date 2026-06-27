@@ -25,10 +25,10 @@ export default function GigCard({ gig, isSelected, onClick }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-zinc-50 text-base leading-snug truncate">
+          <h3 className="font-semibold text-gray-900 text-base leading-snug truncate">
             {gig.title}
           </h3>
-          <p className="text-sm text-zinc-500 mt-0.5 truncate">
+          <p className="text-sm text-gray-500 mt-0.5 truncate">
             📍 {gig.venue}{gig.location ? `, ${gig.location}` : ''}
           </p>
         </div>
@@ -36,14 +36,14 @@ export default function GigCard({ gig, isSelected, onClick }) {
       </div>
 
       {/* Info row */}
-      <div className="flex items-center gap-4 text-sm text-zinc-500">
+      <div className="flex items-center gap-4 text-sm text-gray-500">
         <span className="flex items-center gap-1.5">
-          <span className="text-violet-400 text-xs">📅</span>
+          <span className="text-indigo-500 text-xs">📅</span>
           {formatDate(gig.date)}
         </span>
         {gig.startTime && (
           <span className="flex items-center gap-1.5">
-            <span className="text-violet-400 text-xs">⏰</span>
+            <span className="text-indigo-500 text-xs">⏰</span>
             {gig.startTime}{gig.endTime ? `–${gig.endTime}` : ''}
           </span>
         )}
@@ -51,7 +51,7 @@ export default function GigCard({ gig, isSelected, onClick }) {
 
       {/* Budget */}
       <div className="flex items-center justify-between">
-        <span className="text-2xl font-bold text-emerald-400 tracking-tight">
+        <span className="text-2xl font-bold text-emerald-700 tracking-tight">
           {formatPHP(gig.budget)}
         </span>
         {gig.requirements?.backlineProvided && (

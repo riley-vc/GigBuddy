@@ -49,23 +49,23 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="w-full max-w-lg bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
               referrerPolicy="no-referrer"
-              src={musician.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(musician.name)}&background=7c3aed&color=fff&size=80`}
+              src={musician.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(musician.name)}&background=4f46e5&color=fff&size=80`}
               alt={musician.name}
-              className="w-10 h-10 rounded-xl object-cover border border-zinc-700"
+              className="w-10 h-10 rounded-xl object-cover border border-gray-200"
             />
             <div>
-              <h3 className="font-bold text-zinc-50 text-base">Invite {musician.name}</h3>
-              <p className="text-xs text-violet-400">{(musician.instruments || [])[0] || 'Musician'}</p>
+              <h3 className="font-bold text-gray-900 text-base">Invite {musician.name}</h3>
+              <p className="text-xs text-indigo-600">{(musician.instruments || [])[0] || 'Musician'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-50 p-1.5 hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -73,11 +73,11 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Gig Selector */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
               Select Gig to Invite For
             </label>
             {openGigs.length === 0 ? (
-              <p className="text-xs text-amber-400 bg-amber-500/5 border border-amber-500/10 p-3 rounded-lg">
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 p-3 rounded-lg">
                 You have no open gigs right now. Publish one first from the "Publish Open Gig Call" tab.
               </p>
             ) : (
@@ -90,8 +90,8 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
                       key={gigId}
                       className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                         selectedGigId === gigId
-                          ? 'border-violet-500/70 bg-violet-600/5'
-                          : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950'
+                          ? 'border-indigo-500 bg-indigo-50/50'
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
                       } ${invited ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <input
@@ -101,13 +101,13 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
                         checked={selectedGigId === gigId}
                         onChange={() => !invited && setSelectedGigId(gigId)}
                         disabled={invited}
-                        className="mt-0.5 accent-violet-600 cursor-pointer"
+                        className="mt-0.5 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-zinc-100 truncate">{gig.title}</p>
-                        <p className="text-[10px] font-mono text-zinc-500 truncate">{gig.venueName} · ₱{gig.budget?.toLocaleString()}</p>
+                        <p className="text-xs font-semibold text-gray-900 truncate">{gig.title}</p>
+                        <p className="text-[10px] font-mono text-gray-500 truncate">{gig.venueName} · ₱{gig.budget?.toLocaleString()}</p>
                         {invited && (
-                          <span className="text-[9px] text-emerald-400 font-mono uppercase">✓ Already Invited</span>
+                          <span className="text-[9px] text-emerald-600 font-mono uppercase">✓ Already Invited</span>
                         )}
                       </div>
                     </label>
@@ -119,7 +119,7 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
 
           {/* Personal Note */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
               Personal Note (optional)
             </label>
             <textarea
@@ -128,12 +128,12 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={`Hi ${musician.name?.split(' ')[0]}, we'd love to have you for this gig! Your profile stood out to us...`}
-              className="w-full bg-zinc-950 border border-zinc-800 text-zinc-300 rounded-lg py-2.5 px-3 text-xs focus:outline-none focus:border-violet-500 placeholder:text-zinc-600 resize-none"
+              className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg py-2.5 px-3 text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-gray-400 resize-none"
             />
           </div>
 
           {error && (
-            <p className="text-xs text-amber-400 bg-amber-500/5 border border-amber-500/10 px-3 py-2 rounded-lg">
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
               {error}
             </p>
           )}
@@ -142,7 +142,7 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-lg py-2.5 text-xs font-semibold transition-colors cursor-pointer"
+              className="btn-secondary flex-1 py-2.5 text-xs font-semibold cursor-pointer"
             >
               Cancel
             </button>
@@ -150,7 +150,7 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
               id="send-invite-btn"
               type="submit"
               disabled={openGigs.length === 0}
-              className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-50 rounded-lg py-2.5 text-xs font-semibold shadow-lg shadow-violet-600/10 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               Send Direct Invitation
@@ -239,23 +239,23 @@ export default function ArtistMarketplace({
   return (
     <div id="artist-marketplace-container" className="space-y-4">
       {/* Search & Filters */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+      <div className="card p-4 space-y-3">
         <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
           <div className="relative w-full md:max-w-xs">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
             <input
               id="search-artist-input"
               type="text"
               placeholder="Search by name, instrument, genre..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 text-zinc-300 rounded-lg pl-9 pr-4 py-1.5 text-xs focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-9 pr-4 py-1.5 text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
-            <UserCheck className="w-3.5 h-3.5 text-violet-400" />
-            <span className="text-zinc-300 font-semibold">{filteredMusicians.length}</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-mono text-gray-500">
+            <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+            <span className="text-gray-900 font-semibold">{filteredMusicians.length}</span>
             <span>verified artist{filteredMusicians.length !== 1 ? 's' : ''} available</span>
           </div>
         </div>
@@ -263,8 +263,8 @@ export default function ArtistMarketplace({
         {/* Filter rows */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <ListFilter className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider w-16 shrink-0">Instrument</span>
+            <ListFilter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wider w-16 shrink-0">Instrument</span>
             {allInstruments.slice(0, 10).map((inst) => (
               <button
                 key={inst}
@@ -272,8 +272,8 @@ export default function ArtistMarketplace({
                 onClick={() => setSelectedInstrument(inst)}
                 className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
                   selectedInstrument === inst
-                    ? 'bg-violet-600 text-zinc-50'
-                    : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-gray-200'
                 }`}
               >
                 {inst}
@@ -282,8 +282,8 @@ export default function ArtistMarketplace({
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            <ListFilter className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider w-16 shrink-0">Genre</span>
+            <ListFilter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wider w-16 shrink-0">Genre</span>
             {allGenres.slice(0, 10).map((genre) => (
               <button
                 key={genre}
@@ -291,8 +291,8 @@ export default function ArtistMarketplace({
                 onClick={() => setSelectedGenre(genre)}
                 className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
                   selectedGenre === genre
-                    ? 'bg-fuchsia-700 text-zinc-50'
-                    : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-gray-200'
                 }`}
               >
                 {genre}
@@ -307,7 +307,7 @@ export default function ArtistMarketplace({
         {/* Left: Artist Cards */}
         <div className="lg:col-span-5 space-y-2.5 max-h-[620px] overflow-y-auto pr-1">
           {filteredMusicians.length === 0 ? (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center text-zinc-400 text-sm">
+            <div className="card p-8 text-center text-gray-500 text-sm">
               No artists match your filters.
             </div>
           ) : (
@@ -322,22 +322,22 @@ export default function ArtistMarketplace({
                   id={`artist-card-${mId}`}
                   key={mId}
                   onClick={() => setSelectedArtistId(mId)}
-                  className={`border rounded-xl p-4 cursor-pointer transition-all relative overflow-hidden ${
+                  className={`border rounded-xl p-4 cursor-pointer transition-all relative overflow-hidden bg-white ${
                     active
-                      ? 'bg-zinc-900 border-violet-500/80 shadow-md shadow-violet-600/5'
-                      : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
+                      ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500/20'
+                      : 'border-gray-200 hover:border-gray-300 shadow-sm'
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
                     <div className="relative shrink-0">
                       <img
                         referrerPolicy="no-referrer"
-                        src={m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=7c3aed&color=fff&size=80`}
+                        src={m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=4f46e5&color=fff&size=80`}
                         alt={m.name}
-                        className="w-12 h-12 rounded-xl object-cover border border-zinc-800"
+                        className="w-12 h-12 rounded-xl object-cover border border-gray-200"
                       />
                       {invited && (
-                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-md">
                           <Check className="w-3 h-3 text-white" />
                         </div>
                       )}
@@ -345,17 +345,17 @@ export default function ArtistMarketplace({
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <h4 className="font-bold text-zinc-50 text-sm truncate">{m.name}</h4>
+                        <h4 className="font-bold text-gray-900 text-sm truncate">{m.name}</h4>
                         {m.genres?.length > 0 && (
-                          <BadgeCheck className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                          <BadgeCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                         )}
                       </div>
-                      <p className="text-[11px] text-violet-400 font-medium flex items-center gap-1 mt-0.5">
+                      <p className="text-[11px] text-indigo-600 font-medium flex items-center gap-1 mt-0.5">
                         <InstrumentIcon name={(m.instruments || [])[0]} />
                         <span className="truncate">{(m.instruments || []).join(', ') || 'Musician'}</span>
                       </p>
                       {m.location && (
-                        <p className="text-[10px] text-zinc-500 flex items-center gap-1 mt-1 font-mono">
+                        <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-1 font-mono">
                           <MapPin className="w-3 h-3" />
                           <span>{m.location}</span>
                         </p>
@@ -364,19 +364,19 @@ export default function ArtistMarketplace({
 
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                       {invites > 0 && (
-                        <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 px-1.5 py-0.5 rounded">
+                        <span className="text-[9px] font-mono text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded">
                           {invites} invite{invites > 1 ? 's' : ''} sent
                         </span>
                       )}
-                      <ChevronRight className={`w-4 h-4 transition-colors ${active ? 'text-violet-400' : 'text-zinc-600'}`} />
+                      <ChevronRight className={`w-4 h-4 transition-colors ${active ? 'text-indigo-600' : 'text-gray-400'}`} />
                     </div>
                   </div>
 
                   {/* Genre tags */}
                   {(m.genres || []).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t border-zinc-800/60">
+                    <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-100">
                       {m.genres.slice(0, 4).map((g) => (
-                        <span key={g} className="px-1.5 py-0.5 bg-zinc-950 text-[9px] font-mono text-zinc-400 rounded">
+                        <span key={g} className="px-1.5 py-0.5 bg-gray-50 text-[9px] font-mono text-gray-500 border border-gray-200 rounded">
                           {g}
                         </span>
                       ))}
@@ -389,48 +389,48 @@ export default function ArtistMarketplace({
         </div>
 
         {/* Right: Artist Profile Detail */}
-        <div className="lg:col-span-7 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden">
+        <div className="lg:col-span-7 card p-0 overflow-hidden">
           {!selectedArtist ? (
-            <div className="h-[620px] flex items-center justify-center text-zinc-500 text-sm">
+            <div className="h-[620px] flex items-center justify-center text-gray-500 text-sm">
               Select an artist to view their profile
             </div>
           ) : (
             <>
               {/* Hero */}
-              <div className="relative bg-gradient-to-br from-violet-600/10 via-zinc-900 to-fuchsia-900/10 border-b border-zinc-800 p-6">
+              <div className="relative bg-gradient-to-br from-indigo-50 via-white to-indigo-50/50 border-b border-gray-100 p-6">
                 <div className="flex items-start gap-5">
                   <img
                     referrerPolicy="no-referrer"
-                    src={selectedArtist.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=7c3aed&color=fff&size=160`}
+                    src={selectedArtist.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=4f46e5&color=fff&size=160`}
                     alt={selectedArtist.name}
-                    className="w-20 h-20 rounded-2xl object-cover border-2 border-violet-500/30 shadow-xl shadow-violet-600/10 shrink-0"
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-indigo-100 shadow-md shrink-0"
                   />
                   <div className="flex-1 min-w-0 space-y-2">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className="font-extrabold text-zinc-50 text-2xl tracking-tight">
+                        <h2 className="font-extrabold text-gray-900 text-2xl tracking-tight">
                           {selectedArtist.name}
                         </h2>
-                        <span className="px-2 py-0.5 bg-violet-600/20 text-violet-400 text-[10px] font-bold uppercase tracking-wider rounded-full border border-violet-500/20">
+                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider rounded-full border border-indigo-100">
                           Verified Artist
                         </span>
                       </div>
-                      <p className="text-sm text-violet-300 font-medium mt-0.5 flex items-center gap-1.5">
+                      <p className="text-sm text-indigo-600 font-medium mt-0.5 flex items-center gap-1.5">
                         <InstrumentIcon name={(selectedArtist.instruments || [])[0]} />
                         {(selectedArtist.instruments || []).join(' · ') || 'Musician'}
                       </p>
                     </div>
                     {selectedArtist.location && (
-                      <p className="text-xs text-zinc-400 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-zinc-500" />
+                      <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
                         {selectedArtist.location}
                       </p>
                     )}
                     <div className="flex items-center gap-3 pt-1">
                       {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} className={`w-4 h-4 ${s <= 4 ? 'text-amber-400 fill-amber-400' : 'text-zinc-700'}`} />
+                        <Star key={s} className={`w-4 h-4 ${s <= 4 ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} />
                       ))}
-                      <span className="text-xs text-zinc-400 font-mono">4.8 · Verified Pro</span>
+                      <span className="text-xs text-gray-500 font-mono">4.8 · Verified Pro</span>
                     </div>
                   </div>
                 </div>
@@ -441,8 +441,8 @@ export default function ArtistMarketplace({
                 {/* Bio */}
                 {selectedArtist.bio && (
                   <div>
-                    <h5 className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 mb-2">Artist Bio</h5>
-                    <p className="text-xs text-zinc-300 leading-relaxed italic bg-zinc-950/40 p-3.5 rounded-lg border border-zinc-800">
+                    <h5 className="text-[10px] font-mono uppercase tracking-wider text-gray-500 mb-2">Artist Bio</h5>
+                    <p className="text-xs text-gray-700 leading-relaxed italic bg-gray-50 p-3.5 rounded-lg border border-gray-100">
                       "{selectedArtist.bio}"
                     </p>
                   </div>
@@ -451,10 +451,10 @@ export default function ArtistMarketplace({
                 {/* Instruments */}
                 {(selectedArtist.instruments || []).length > 0 && (
                   <div>
-                    <h5 className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 mb-2">Instruments</h5>
+                    <h5 className="text-[10px] font-mono uppercase tracking-wider text-gray-500 mb-2">Instruments</h5>
                     <div className="flex flex-wrap gap-2">
                       {selectedArtist.instruments.map((inst) => (
-                        <span key={inst} className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/10 text-violet-300 border border-violet-500/20 rounded-lg text-xs font-medium">
+                        <span key={inst} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-medium">
                           <InstrumentIcon name={inst} />
                           {inst}
                         </span>
@@ -466,10 +466,10 @@ export default function ArtistMarketplace({
                 {/* Genres */}
                 {(selectedArtist.genres || []).length > 0 && (
                   <div>
-                    <h5 className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 mb-2">Genre Expertise</h5>
+                    <h5 className="text-[10px] font-mono uppercase tracking-wider text-gray-500 mb-2">Genre Expertise</h5>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedArtist.genres.map((g) => (
-                        <span key={g} className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-300 rounded text-xs font-semibold uppercase tracking-wide">
+                        <span key={g} className="px-2.5 py-1 bg-white border border-gray-200 text-gray-700 rounded text-xs font-semibold uppercase tracking-wide">
                           {g}
                         </span>
                       ))}
@@ -480,13 +480,13 @@ export default function ArtistMarketplace({
                 {/* Past activity on platform */}
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: 'Gigs Done', val: '12', color: 'text-emerald-400' },
-                    { label: 'Avg Response', val: '< 2h', color: 'text-violet-400' },
-                    { label: 'Cancellations', val: '0', color: 'text-zinc-300' },
+                    { label: 'Gigs Done', val: '12', color: 'text-emerald-600' },
+                    { label: 'Avg Response', val: '< 2h', color: 'text-indigo-600' },
+                    { label: 'Cancellations', val: '0', color: 'text-gray-500' },
                   ].map(({ label, val, color }) => (
-                    <div key={label} className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-center">
+                    <div key={label} className="bg-gray-50 border border-gray-100 rounded-lg p-3 text-center">
                       <span className={`text-lg font-extrabold font-mono block ${color}`}>{val}</span>
-                      <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{label}</span>
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</span>
                     </div>
                   ))}
                 </div>
@@ -496,7 +496,7 @@ export default function ArtistMarketplace({
               <div className="px-6 pb-6">
                 {successIds.has(selectedArtist._id || selectedArtist.id) ? (
                   <div className="space-y-2">
-                    <div className="w-full bg-emerald-500/10 border border-emerald-500/15 p-3 rounded-xl text-emerald-400 text-sm font-semibold flex items-center justify-center gap-2">
+                    <div className="w-full bg-emerald-50 border border-emerald-100 p-3 rounded-xl text-emerald-600 text-sm font-semibold flex items-center justify-center gap-2">
                       <Check className="w-4 h-4" />
                       Invitation Sent!
                     </div>
@@ -504,9 +504,9 @@ export default function ArtistMarketplace({
                       <button
                         id={`open-chat-${selectedArtist._id || selectedArtist.id}`}
                         onClick={() => onOpenInviteChat(inviteConvoMap[selectedArtist._id || selectedArtist.id])}
-                        className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 font-semibold rounded-xl py-2.5 text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+                        className="btn-secondary w-full py-2.5 text-sm flex items-center justify-center gap-2"
                       >
-                        <MessageSquare className="w-4 h-4 text-violet-400" />
+                        <MessageSquare className="w-4 h-4 text-indigo-600" />
                         Open Chat with {selectedArtist.name?.split(' ')[0]}
                       </button>
                     )}
@@ -515,7 +515,7 @@ export default function ArtistMarketplace({
                   <button
                     id={`invite-artist-${selectedArtist._id || selectedArtist.id}`}
                     onClick={() => setInviteTarget(selectedArtist)}
-                    className="w-full bg-violet-600 hover:bg-violet-500 text-zinc-50 font-semibold rounded-xl py-3.5 text-sm transition-all shadow-lg shadow-violet-600/20 hover:scale-[1.01] active:scale-[0.99] transform cursor-pointer flex items-center justify-center gap-2"
+                    className="btn-primary w-full py-3.5 text-sm flex items-center justify-center gap-2"
                   >
                     <Send className="w-4 h-4" />
                     Invite {selectedArtist.name?.split(' ')[0]} to a Gig
