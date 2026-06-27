@@ -15,14 +15,20 @@ export default function MusicianDashboard({
 }) {
   const [newBandName, setNewBandName] = useState('');
 
-  const myContracts = contracts.filter((c) => c.status === 'fully_signed');
-  const upcomingCount = myContracts.length;
+  const myContracts     = contracts.filter((c) => {
+    const mid = c.musicianId?._id || c.musicianId;
+    return mid?.toString() === profile._id?.toString();
+  });
+  const fundedContracts   = myContracts.filter((c) => c.status === 'funded');
+  const completedContracts = myContracts.filter((c) => c.status === 'completed');
+  const upcomingCount     = fundedContracts.length + completedContracts.length;
 
   const myApplications = applications.filter(
     (a) => (a.musicianId?._id || a.musicianId) === profile._id
   );
-  const pendingCount = myApplications.filter((a) => a.status === 'pending').length;
-  const projectedEarnings = myContracts.reduce((acc, c) => acc + (c.compensation || 0), 0);
+  const pendingCount      = myApplications.filter((a) => a.status === 'pending').length;
+  const escrowTotal       = fundedContracts.reduce((acc, c) => acc + (c.compensation || 0), 0);
+  const totalEarned       = completedContracts.reduce((acc, c) => acc + (c.compensation || 0), 0);
 
   // Unread invitations count from conversations
   const myConversations = (conversations || []).filter(
@@ -48,12 +54,12 @@ export default function MusicianDashboard({
   return (
     <div id="musician-dashboard-wrapper" className="space-y-6">
       {/* Stats Row */}
-      <div id="musician-stats-row" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div id="musician-stats-row" className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
           <div className="space-y-1">
-            <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Upcoming Gigs</span>
+            <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Contracted Gigs</span>
             <span className="text-3xl font-extrabold text-zinc-50 block">{upcomingCount}</span>
-            <span className="text-[10px] text-zinc-400 block">Fully contracted</span>
+            <span className="text-[10px] text-zinc-400 block">Funded or completed</span>
           </div>
           <div className="w-12 h-12 rounded-lg bg-violet-600/10 border border-violet-500/10 flex items-center justify-center text-violet-400">
             <Calendar className="w-5 h-5" />
@@ -73,18 +79,29 @@ export default function MusicianDashboard({
 
         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
           <div className="space-y-1">
-            <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Projected Earnings</span>
-            <span className="text-3xl font-extrabold text-emerald-400 block">₱{projectedEarnings?.toLocaleString()}</span>
-            <span className="text-[10px] text-emerald-400/80 block bg-emerald-500/5 py-0.5 px-1.5 rounded inline-block">Secure in escrow</span>
+            <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">In Escrow</span>
+            <span className="text-3xl font-extrabold text-amber-400 block">₱{escrowTotal.toLocaleString()}</span>
+            <span className="text-[10px] text-amber-400/80 block bg-amber-500/5 py-0.5 px-1.5 rounded inline-block">🔒 Funded &amp; held</span>
+          </div>
+          <div className="w-12 h-12 rounded-lg bg-amber-500/10 border border-amber-500/10 flex items-center justify-center text-amber-400">
+            <DollarSign className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
+          <div className="space-y-1">
+            <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Total Earned</span>
+            <span className="text-3xl font-extrabold text-emerald-400 block">₱{totalEarned.toLocaleString()}</span>
+            <span className="text-[10px] text-emerald-400/80 block bg-emerald-500/5 py-0.5 px-1.5 rounded inline-block">✅ Paid out</span>
           </div>
           <div className="w-12 h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/10 flex items-center justify-center text-emerald-400">
-            <DollarSign className="w-5 h-5" />
+            <CheckSquare className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Invitation Inbox + Availability + Bands */}
+        {/* Left: Invitation Inbox + Contracts + Availability + Bands */}
         <div className="lg:col-span-7 space-y-6">
 
           {/* ── Invitation Inbox ─────────────────────────────────────────────── */}
@@ -93,6 +110,36 @@ export default function MusicianDashboard({
             applications={myApplications}
             onOpenChat={onOpenChat}
           />
+
+          {/* ── My Contracts (funded + completed) ──────────────────────────── */}
+          {(fundedContracts.length > 0 || completedContracts.length > 0) && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-md space-y-3">
+              <h3 className="font-bold text-zinc-50 text-sm">My Contracts &amp; Payments</h3>
+              <div className="space-y-2">
+                {[...fundedContracts, ...completedContracts].map((c) => (
+                  <div key={c._id || c.id} className="flex items-center justify-between gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded-xl">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-zinc-100 truncate">{c.gigTitle}</p>
+                      <p className="text-[11px] font-mono text-zinc-500">{c.venueName} · {c.date}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-bold text-sm font-mono text-emerald-400">₱{c.compensation?.toLocaleString()}</span>
+                      {c.status === 'funded' && (
+                        <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold uppercase rounded">
+                          🔒 In Escrow
+                        </span>
+                      )}
+                      {c.status === 'completed' && (
+                        <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase rounded">
+                          ✅ PAID
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Availability Tracker */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-md">

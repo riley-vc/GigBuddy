@@ -29,3 +29,23 @@ export async function signContract(id, role, signature) {
   if (!json.success) throw new Error(json.error);
   return json.data;
 }
+
+export async function fundContract(id) {
+  const res = await fetch(`${BASE}/${id}/fund`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error);
+  return json.data;
+}
+
+export async function releasePayment(id) {
+  const res = await fetch(`${BASE}/${id}/release`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error);
+  return json.data;
+}

@@ -12,6 +12,7 @@ import userRoutes         from './routes/users.js';
 import contractRoutes     from './routes/contracts.js';
 import conversationRoutes from './routes/conversations.js';
 import messageRoutes      from './routes/messages.js';
+import authRoutes         from './routes/auth.js';
 
 import Message      from './models/Message.js';
 import Conversation from './models/Conversation.js';
@@ -33,6 +34,7 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // ─── REST Routes ──────────────────────────────────────────────────────────────
+app.use('/api/auth',          authRoutes);
 app.use('/api/users',         userRoutes);
 app.use('/api/gigs',          gigRoutes);
 app.use('/api/applications',  applicationRoutes);

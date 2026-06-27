@@ -32,7 +32,7 @@ async function seed() {
     {
       name: 'Maria Santos',
       email: 'maria@skydeck.com.ph',
-      password: 'hashed_placeholder',
+      password: 'password123',
       role: 'organizer',
       location: 'BGC, Taguig',
     },
@@ -40,7 +40,7 @@ async function seed() {
     {
       name: 'Carlo Reyes',
       email: 'carlo@gigbag.ph',
-      password: 'hashed_placeholder',
+      password: 'password123',
       role: 'musician',
       bio: 'Professional guitarist and bassist based in BGC, Taguig. Specializes in OPM, Bisrock, and P-pop sessions for corporate events, weddings, and live bar gigs across Metro Manila. Full backline available.',
       instruments: ['Electric Guitar', 'Bass Guitar', 'Acoustic Guitar'],
@@ -51,7 +51,7 @@ async function seed() {
     {
       name: 'Bea Villanueva',
       email: 'bea@beatrice.music',
-      password: 'hashed_placeholder',
+      password: 'password123',
       role: 'musician',
       bio: 'Versatile vocalist and keys player from Cebu City. 6 years of live OPM lounge and events experience. Fluent in Visayan and Tagalog repertoire, Filipino jazz standards, and kundiman.',
       instruments: ['Vocals', 'Piano', 'Keyboard'],
@@ -62,7 +62,7 @@ async function seed() {
     {
       name: 'Jomar "JR" Ramos',
       email: 'jr@jrdrums.ph',
-      password: 'hashed_placeholder',
+      password: 'password123',
       role: 'musician',
       bio: 'Session drummer with extensive Bisrock and alt-OPM gig history. Has played at Route 196, 12 Monkeys, and B-Side Collective. Tight grooves, reliable kit, and full professional setup.',
       instruments: ['Drums', 'Percussion', 'Cajon'],

@@ -9,6 +9,7 @@ export default function OrganizerDashboard({
   onRejectApplication,
   onCancelGig,
   onOpenContract,
+  onOpenPayment,
 }) {
   const [activeTab, setActiveTab] = useState('managed');
 
@@ -283,46 +284,80 @@ export default function OrganizerDashboard({
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {contracts.map((contract) => (
-                  <div key={contract.id || contract._id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className="p-2.5 bg-violet-500/10 text-violet-400 rounded-lg shrink-0">
-                        <FileText className="w-5 h-5" />
+                {contracts.map((contract) => {
+                  const cid = contract.id || contract._id;
+                  const st  = contract.status;
+                  return (
+                    <div key={cid} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className={`p-2.5 rounded-lg shrink-0 ${
+                          st === 'funded' ? 'bg-emerald-500/10 text-emerald-400'
+                          : st === 'completed' ? 'bg-violet-500/10 text-violet-400'
+                          : 'bg-violet-500/10 text-violet-400'
+                        }`}>
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-zinc-100 text-sm">{contract.gigTitle}</h4>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-400 mt-1 font-mono">
+                            <span>Venue: {contract.venueName}</span>
+                            <span className="text-zinc-700">•</span>
+                            <span>Compensation: <strong className="text-emerald-400">₱{contract.compensation?.toLocaleString()}</strong></span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-zinc-100 text-sm">{contract.gigTitle}</h4>
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-400 mt-1 font-mono">
-                          <span>Venue: {contract.venueName}</span>
-                          <span className="text-zinc-700">•</span>
-                          <span>Compensation: <strong className="text-emerald-400">₱{contract.compensation?.toLocaleString()}</strong></span>
+
+                      <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-zinc-800/60 pt-3.5 md:pt-0 flex-wrap">
+                        {/* Status badge */}
+                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold font-mono ${
+                          st === 'fully_signed'     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          : st === 'funded'         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : st === 'completed'      ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                          : 'bg-zinc-800 text-zinc-500'
+                        }`}>
+                          {st === 'fully_signed'  ? '✍ Signed — Awaiting Deposit'
+                          : st === 'funded'       ? '🔒 Funded — Escrow Active'
+                          : st === 'completed'    ? '✅ Payment Released'
+                          : 'Awaiting Signatures'}
+                        </span>
+
+                        <div className="flex gap-2 items-center">
+                          {/* View MoA */}
+                          <button
+                            id={`open-contract-${cid}`}
+                            onClick={() => onOpenContract(contract)}
+                            className="px-3 py-1.5 bg-zinc-950 hover:bg-zinc-800 text-zinc-300 rounded border border-zinc-800 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                          >
+                            <FileSignature className="w-3.5 h-3.5" />
+                            View MoA
+                          </button>
+
+                          {/* Deposit Funds CTA (fully_signed only) */}
+                          {st === 'fully_signed' && (
+                            <button
+                              id={`deposit-funds-${cid}`}
+                              onClick={() => onOpenPayment(contract)}
+                              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/30"
+                            >
+                              Deposit Funds →
+                            </button>
+                          )}
+
+                          {/* Release Payment CTA (funded only) */}
+                          {st === 'funded' && (
+                            <button
+                              id={`release-payment-${cid}`}
+                              onClick={() => onOpenPayment(contract)}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-emerald-900/30"
+                            >
+                              Release Payment →
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-zinc-800/60 pt-3.5 md:pt-0">
-                      <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold font-mono ${
-                        contract.status === 'fully_signed'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : contract.status === 'completed'
-                          ? 'bg-zinc-800 text-zinc-400'
-                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                      }`}>
-                        {contract.status === 'fully_signed' ? 'Fully Signed (Escrow Active)'
-                          : contract.status === 'completed' ? 'Archived (Completed)'
-                          : 'Awaiting Signatures'}
-                      </span>
-
-                      <button
-                        id={`open-contract-${contract.id || contract._id}`}
-                        onClick={() => onOpenContract(contract)}
-                        className="px-3 py-1.5 bg-zinc-950 hover:bg-zinc-800 text-zinc-300 rounded border border-zinc-800 text-xs font-semibold transition-colors flex items-center gap-1.5"
-                      >
-                        <FileSignature className="w-3.5 h-3.5" />
-                        View MoA
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

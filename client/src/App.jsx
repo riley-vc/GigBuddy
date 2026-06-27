@@ -6,19 +6,21 @@ import {
   Compass,
   Sparkles,
   PlayCircle,
-  Check,
   Store,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from './context/AuthContext.jsx';
 
 import { getGigs, createGig, updateGigStatus } from './api/gigs.js';
 import { getApplications, createApplication, updateApplicationStatus } from './api/applications.js';
-import { getContracts, createContract, signContract } from './api/contracts.js';
+import { getContracts, createContract, signContract, fundContract, releasePayment } from './api/contracts.js';
 import { getUsers } from './api/users.js';
 import { getConversations, getMessages, markConversationRead } from './api/conversations.js';
 
 import RoleToggle from './components/RoleToggle.jsx';
 import Header from './components/Header.jsx';
 import MoaContractModal from './components/MoaContractModal.jsx';
+import PaymentPortalModal from './components/PaymentPortalModal.jsx';
 import GigCreatorForm from './components/GigCreatorForm.jsx';
 import OrganizerDashboard from './components/OrganizerDashboard.jsx';
 import MusicianDashboard from './components/MusicianDashboard.jsx';
@@ -26,44 +28,18 @@ import GigMarketplace from './components/GigMarketplace.jsx';
 import ArtistMarketplace from './components/ArtistMarketplace.jsx';
 import ChatDrawer from './components/ChatDrawer.jsx';
 
-// ─── Phase 1 Mock Auth ─────────────────────────────────────────────────────────
-// These IDs are printed by seed.js — swap them after running the seed script.
-// In Phase 2 they will come from JWT / auth context.
-const MOCK_ORGANIZER = {
-  _id: '6a3bf5118387e5b0180c199e',
-  name: 'Sarah Jenkins',
-  avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-  role: 'organizer',
-};
-
-const MOCK_MUSICIAN = {
-  _id: '6a3bf5118387e5b0180c199f',
-  name: 'Leo Mercer',
-  avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-  primaryInstrument: 'Electric Bass & Synthesizer',
-  skills: ['Groove pocket', 'Fretless bass', 'Sight-reading charts', 'MIDI routing', 'Stage presence'],
-  bio: 'Professional multi-instrumentalist based in Chicago. Specializes in thick bass grooves, synth bass layers, and rhythmic syncopation for funk, jazz-fusion, and premium corporate cover bands.',
-  videoUrl: 'https://www.youtube.com/watch?v=sample-bass-reel',
-  availability: {
-    Monday: 'available',
-    Tuesday: 'busy',
-    Wednesday: 'available',
-    Thursday: 'tentative',
-    Friday: 'available',
-    Saturday: 'available',
-    Sunday: 'busy',
-  },
-  bands: ['The Chicago Groove Syndicate', 'Velvet Slate Duo', 'RetroWave Orchestra'],
-  role: 'musician',
-};
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+// currentUser now comes from AuthContext (set by LoginPage / RegisterPage).
 // ──────────────────────────────────────────────────────────────────────────────
 
 // Socket singleton — created once, reused across re-renders
 const SOCKET_URL = 'http://localhost:4000';
 
 export default function App() {
+  const { currentUser, logout } = useAuth();
+
   // ── Role & Navigation ─────────────────────────────────────────────────────
-  const [role, setRole] = useState('organizer');
+  const [role, setRole] = useState(currentUser.role);
   const [organizerTab, setOrganizerTab] = useState('dashboard');
   const [musicianTab, setMusicianTab] = useState('find_gigs');
 
@@ -83,20 +59,21 @@ export default function App() {
   const [chatLoading, setChatLoading] = useState(false);
   const socketRef = useRef(null);
 
-  // ── Musician local profile state (Phase 1 — will come from DB in Phase 2) ─
-  const [profile, setProfile] = useState(MOCK_MUSICIAN);
+  // ── Musician local profile state ─────────────────────────────────────────
+  const [profile, setProfile] = useState(currentUser);
 
   // ── MoA Modal ─────────────────────────────────────────────────────────────
   const [isMoaModalOpen, setIsMoaModalOpen] = useState(false);
   const [draftContract, setDraftContract] = useState({});
   const [signingTargetAppId, setSigningTargetAppId] = useState(null);
 
+  // ── Payment Portal Modal ──────────────────────────────────────────────────
+  const [isPaymentPortalOpen, setIsPaymentPortalOpen] = useState(false);
+  const [paymentPortalContract, setPaymentPortalContract] = useState(null);
+
   // ── Initialise Socket.io ──────────────────────────────────────────────────
   useEffect(() => {
-    const currentUser = role === 'organizer' ? MOCK_ORGANIZER : MOCK_MUSICIAN;
-
-    // Phase 1: send mock userId + role in the handshake auth
-    // Phase 2: send real JWT token here instead
+    // Send real userId + role from the logged-in user
     const socket = io(SOCKET_URL, {
       auth: { userId: currentUser._id, role: currentUser.role },
       transports: ['websocket'],
@@ -168,17 +145,11 @@ export default function App() {
 
   const refreshConversations = async () => {
     try {
-      // Fetch conversations for both mock users so role-toggle works instantly
-      const [orgConvos, musConvos] = await Promise.all([
-        getConversations({ organizerId: MOCK_ORGANIZER._id }),
-        getConversations({ musicianId: MOCK_MUSICIAN._id }),
-      ]);
-      // Merge and deduplicate by _id
-      const merged = [...orgConvos];
-      musConvos.forEach((c) => {
-        if (!merged.find((m) => m._id === c._id)) merged.push(c);
-      });
-      setConversations(merged);
+      const param = currentUser.role === 'organizer'
+        ? { organizerId: currentUser._id }
+        : { musicianId: currentUser._id };
+      const convos = await getConversations(param);
+      setConversations(convos);
     } catch (err) {
       console.warn('Could not load conversations:', err.message);
     }
@@ -223,7 +194,6 @@ export default function App() {
     }
 
     // Mark as read
-    const currentUser = role === 'organizer' ? MOCK_ORGANIZER : MOCK_MUSICIAN;
     try {
       await markConversationRead(conversationId, role);
       setConversations((prev) =>
@@ -266,7 +236,6 @@ export default function App() {
   // ── Send a chat message ───────────────────────────────────────────────────
   const handleSendMessage = useCallback((content) => {
     if (!activeChatConvoId || !socketRef.current) return;
-    const currentUser = role === 'organizer' ? MOCK_ORGANIZER : MOCK_MUSICIAN;
 
     return new Promise((resolve, reject) => {
       socketRef.current.emit(
@@ -274,7 +243,7 @@ export default function App() {
         {
           conversationId: activeChatConvoId,
           senderId: currentUser._id,
-          senderRole: role,
+          senderRole: currentUser.role,
           senderName: currentUser.name,
           content,
         },
@@ -284,7 +253,7 @@ export default function App() {
         }
       );
     });
-  }, [activeChatConvoId, role]);
+  }, [activeChatConvoId, currentUser]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -293,16 +262,16 @@ export default function App() {
     try {
       const app = await createApplication({
         gigId,
-        musicianId: profile._id,
-        musicianName: profile.name,
-        musicianAvatar: profile.avatar,
+        musicianId: currentUser._id,
+        musicianName: currentUser.name,
+        musicianAvatar: currentUser.avatar || '',
         instrument,
         skills,
         coverNote,
-        sampleVideoUrl: profile.videoUrl || '',
+        sampleVideoUrl: currentUser.videoUrl || '',
         initiatedBy: 'musician',
-        organizerId: MOCK_ORGANIZER._id,
-        organizerName: MOCK_ORGANIZER.name,
+        organizerId: currentUser._id,
+        organizerName: currentUser.name,
       });
       setApplications((prev) => [normalizeApp(app), ...prev]);
       // Refresh conversations so musician sees their sent application thread
@@ -324,7 +293,7 @@ export default function App() {
       gigId: associatedGig.id,
       applicationId: appId,
       musicianId: application.musicianId?._id || application.musicianId,
-      organizerId: MOCK_ORGANIZER._id,
+      organizerId: currentUser._id,
       gigTitle: associatedGig.title,
       venueName: associatedGig.venueName,
       date: associatedGig.date ? new Date(associatedGig.date).toLocaleDateString() : '',
@@ -397,11 +366,46 @@ export default function App() {
     try {
       const gig = await createGig({
         ...newGigData,
-        organizerId: MOCK_ORGANIZER._id,
+        organizerId: currentUser._id,
       });
       setGigs((prev) => [normalizeId(gig), ...prev]);
     } catch (err) {
       alert(`Failed to create gig: ${err.message}`);
+    }
+  };
+
+  // 8. Open Payment Portal
+  const handleOpenPaymentPortal = (contract) => {
+    setPaymentPortalContract(contract);
+    setIsPaymentPortalOpen(true);
+  };
+
+  // 9. Fund contract (organizer deposits into escrow)
+  const handleFundContract = async (contractId) => {
+    try {
+      const updated = await fundContract(contractId);
+      setContracts((prev) =>
+        prev.map((c) => (c._id === contractId || c.id === contractId ? { ...normalizeId(updated) } : c))
+      );
+      setPaymentPortalContract(normalizeId(updated));
+      await loadData();
+    } catch (err) {
+      throw err; // re-throw so PaymentPortalModal can show the error
+    }
+  };
+
+  // 10. Release payment (organizer releases to artist)
+  const handleReleasePayment = async (contractId) => {
+    try {
+      const updated = await releasePayment(contractId);
+      setContracts((prev) =>
+        prev.map((c) => (c._id === contractId || c.id === contractId ? { ...normalizeId(updated) } : c))
+      );
+      setIsPaymentPortalOpen(false);
+      setPaymentPortalContract(null);
+      await loadData();
+    } catch (err) {
+      throw err;
     }
   };
 
@@ -416,10 +420,10 @@ export default function App() {
         musicianAvatar: musician.avatar || '',
         instrument: (musician.instruments || [])[0] || '',
         skills: [],
-        coverNote: note || `Direct invitation from event planner ${MOCK_ORGANIZER.name}.`,
+        coverNote: note || `Direct invitation from event planner ${currentUser.name}.`,
         initiatedBy: 'organizer',
-        organizerId: MOCK_ORGANIZER._id,
-        organizerName: MOCK_ORGANIZER.name,
+        organizerId: currentUser._id,
+        organizerName: currentUser.name,
       });
       setApplications((prev) => [normalizeApp(app), ...prev]);
       await refreshConversations();
@@ -485,11 +489,11 @@ export default function App() {
     );
   }
 
-  const currentUser = role === 'organizer' ? MOCK_ORGANIZER : profile;
+  const displayUser = role === 'organizer' ? currentUser : profile;
 
   // Musician tab unread badge
   const musicianUnread = conversations
-    .filter((c) => c.musicianId?.toString() === MOCK_MUSICIAN._id)
+    .filter((c) => c.musicianId?.toString() === currentUser._id)
     .reduce((s, c) => s + (c.unreadMusician || 0), 0);
 
   return (
@@ -498,12 +502,25 @@ export default function App() {
       {/* 1. Header */}
       <Header
         role={role}
-        userName={currentUser.name}
-        userAvatar={currentUser.avatar}
+        userName={displayUser.name}
+        userAvatar={displayUser.avatar}
         escrowTotal={escrowTotal}
         unreadMessages={unreadMessages}
         onOpenChat={handleOpenMostRecentChat}
       />
+
+      {/* Logout button — top-right overlay */}
+      <div className="fixed top-3 right-4 z-50">
+        <button
+          id="btn-logout"
+          onClick={logout}
+          title="Log out"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/90 border border-zinc-700/60 hover:border-red-500/50 text-zinc-400 hover:text-red-400 text-xs font-semibold rounded-lg backdrop-blur-sm transition-all cursor-pointer shadow-lg"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          Logout
+        </button>
+      </div>
 
       {/* 2. Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -600,6 +617,7 @@ export default function App() {
                 onRejectApplication={handleRejectApplication}
                 onCancelGig={handleCancelGig}
                 onOpenContract={handleOpenExistingContract}
+                onOpenPayment={handleOpenPaymentPortal}
               />
             ) : organizerTab === 'artist_marketplace' ? (
               <ArtistMarketplace
@@ -681,13 +699,22 @@ export default function App() {
         role={role}
       />
 
+      {/* Payment Portal Modal */}
+      <PaymentPortalModal
+        isOpen={isPaymentPortalOpen}
+        onClose={() => { setIsPaymentPortalOpen(false); setPaymentPortalContract(null); }}
+        contract={paymentPortalContract}
+        onFund={handleFundContract}
+        onRelease={handleReleasePayment}
+      />
+
       {/* Chat Drawer */}
       <ChatDrawer
         isOpen={isChatOpen}
         onClose={handleCloseChat}
         conversation={activeConversation}
         messages={chatMessages}
-        currentUserId={role === 'organizer' ? MOCK_ORGANIZER._id : MOCK_MUSICIAN._id}
+        currentUserId={currentUser._id}
         currentRole={role}
         onSend={handleSendMessage}
         loading={chatLoading}

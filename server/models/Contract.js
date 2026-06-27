@@ -33,7 +33,7 @@ const ContractSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['pending_signatures', 'fully_signed', 'completed'],
+      enum: ['pending_signatures', 'fully_signed', 'funded', 'completed'],
       default: 'pending_signatures',
     },
   },

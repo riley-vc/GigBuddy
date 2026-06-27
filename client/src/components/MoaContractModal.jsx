@@ -10,16 +10,34 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
 
   const handleSign = (e) => {
     e.preventDefault();
-    if (!signatureText.trim()) {
-      setError('Please type your legal full name to sign.');
+    const trimmed = signatureText.trim();
+
+    if (!trimmed) {
+      setError('Please type your full legal name to sign.');
       return;
     }
+
+    // Must have at least two words (first + last name minimum)
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    if (words.length < 2) {
+      setError('Please enter your full legal name — at least a first and last name.');
+      return;
+    }
+
+    // Each word must be letters only (allows hyphens and apostrophes for names like De La Cruz, O'Brien)
+    const validName = /^[A-Za-zÀ-ÖØ-öø-ÿ''.\-\s]+$/.test(trimmed);
+    if (!validName) {
+      setError('Name must contain letters only — no numbers or special characters.');
+      return;
+    }
+
     if (!agreedToTerms) {
       setError('You must accept the terms of the agreement.');
       return;
     }
+
     setError('');
-    onSign(signatureText);
+    onSign(trimmed);
     setSignatureText('');
     setAgreedToTerms(false);
   };
