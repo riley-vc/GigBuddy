@@ -68,6 +68,29 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PATCH /api/gigs/:id — update editable gig fields (only when status === 'open')
+router.patch('/:id', async (req, res) => {
+  try {
+    const allowed = [
+      'title', 'description', 'venueName', 'date',
+      'soundcheckTime', 'setTime', 'endTime',
+      'budget', 'genres', 'instruments', 'backlineProvided',
+    ];
+    const updates = {};
+    allowed.forEach((key) => { if (req.body[key] !== undefined) updates[key] = req.body[key]; });
+
+    const gig = await Gig.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+    if (!gig) return res.status(404).json({ success: false, error: 'Gig not found' });
+    res.json({ success: true, data: gig });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 // PATCH /api/gigs/:id/status — update gig status
 router.patch('/:id/status', async (req, res) => {
   try {

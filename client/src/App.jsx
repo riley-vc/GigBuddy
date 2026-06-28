@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext.jsx';
 
-import { getGigs, createGig, updateGigStatus } from './api/gigs.js';
+import { getGigs, createGig, updateGig, updateGigStatus } from './api/gigs.js';
 import { getApplications, createApplication, updateApplicationStatus } from './api/applications.js';
 import { getContracts, createContract, signContract, fundContract, releasePayment } from './api/contracts.js';
 import { getUsers } from './api/users.js';
-import { getConversations, getMessages, markConversationRead } from './api/conversations.js';
+import { getConversations, createConversation, getMessages, markConversationRead } from './api/conversations.js';
 
 import RoleToggle from './components/RoleToggle.jsx';
 import Header from './components/Header.jsx';
@@ -36,7 +36,7 @@ import ChatDrawer from './components/ChatDrawer.jsx';
 const SOCKET_URL = 'http://localhost:4000';
 
 export default function App() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, login, logout } = useAuth();
 
   // ── Role & Navigation ─────────────────────────────────────────────────────
   const [role, setRole] = useState(currentUser.role);
@@ -143,11 +143,11 @@ export default function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const refreshConversations = async () => {
+  const refreshConversations = async (asUser = currentUser) => {
     try {
-      const param = currentUser.role === 'organizer'
-        ? { organizerId: currentUser._id }
-        : { musicianId: currentUser._id };
+      const param = asUser.role === 'organizer'
+        ? { organizerId: asUser._id }
+        : { musicianId: asUser._id };
       const convos = await getConversations(param);
       setConversations(convos);
     } catch (err) {
@@ -223,15 +223,59 @@ export default function App() {
     setChatMessages([]);
   }, [activeChatConvoId]);
 
-  // Open the most-recently-active conversation (header bell)
-  const handleOpenMostRecentChat = useCallback(() => {
-    const sorted = [...conversations].sort(
-      (a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
-    );
-    if (sorted.length > 0) {
-      handleOpenChat(sorted[0]._id);
+  // Open the chat drawer to the list view (header bell)
+  const handleOpenChatList = useCallback(() => {
+    setActiveChatConvoId(null);
+    setChatMessages([]);
+    setIsChatOpen(true);
+  }, []);
+
+  // ── Sandbox role switcher — swap mock identity ────────────────────────────
+  const handleRoleSwitch = useCallback(async (selectedRole) => {
+    if (selectedRole === role) return; // already on this role
+
+    // Target names from seed data
+    const targetName = selectedRole === 'organizer' ? 'Maria Santos' : 'Carlo Reyes';
+
+    try {
+      // Fetch all users matching the role and pick by name
+      const users = await getUsers({ role: selectedRole });
+      const match = users.find((u) => u.name === targetName) || users[0];
+      if (!match) return;
+
+      // Swap the logged-in user in AuthContext + localStorage
+      login(match);
+
+      // Reset UI state
+      setRole(selectedRole);
+      setProfile(match);
+      setOrganizerTab('dashboard');
+      setMusicianTab('find_gigs');
+      setIsChatOpen(false);
+      setActiveChatConvoId(null);
+      setChatMessages([]);
+      setConversations([]);
+
+      // Re-fetch data under the new identity
+      setLoading(true);
+      const [gigsData, appsData, contractsData, musiciansData] = await Promise.all([
+        getGigs(),
+        getApplications(),
+        getContracts(),
+        getUsers({ role: 'musician' }),
+      ]);
+      setGigs(gigsData.map(normalizeId));
+      setApplications(appsData.map(normalizeApp));
+      setContracts(contractsData.map(normalizeId));
+      setMusicians(musiciansData.map(normalizeId));
+      await refreshConversations(match);
+    } catch (err) {
+      console.error('Failed to switch role:', err.message);
+    } finally {
+      setLoading(false);
     }
-  }, [conversations, handleOpenChat]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, login]);
 
   // ── Send a chat message ───────────────────────────────────────────────────
   const handleSendMessage = useCallback((content) => {
@@ -374,6 +418,47 @@ export default function App() {
     }
   };
 
+  // 7b. Edit gig (open gigs only)
+  const handleEditGig = async (gigId, fields) => {
+    try {
+      const updated = await updateGig(gigId, fields);
+      setGigs((prev) => prev.map((g) => (g.id === gigId ? normalizeId(updated) : g)));
+    } catch (err) {
+      alert(`Failed to update gig: ${err.message}`);
+    }
+  };
+
+  // 7c. Start chat from Review Candidates — find existing or create a new conversation
+  const handleStartChatWithApplicant = useCallback(async (app, associatedGig) => {
+    try {
+      // Check if a conversation already exists in local state
+      let convo = conversations.find(
+        (c) => c.applicationId?.toString() === (app._id || app.id)?.toString()
+      );
+
+      if (!convo) {
+        // Create one (server guards against duplicates)
+        convo = await createConversation({
+          applicationId: app._id || app.id,
+          gigId: associatedGig?.id || associatedGig?._id,
+          organizerId: currentUser._id,
+          musicianId: app.musicianId?._id || app.musicianId,
+          gigTitle: associatedGig?.title || '',
+          venueName: associatedGig?.venueName || '',
+          gigBudget: associatedGig?.budget || 0,
+          organizerName: currentUser.name,
+          musicianName: app.musicianName || '',
+        });
+        // Add to local conversations list
+        setConversations((prev) => [...prev, convo]);
+      }
+
+      handleOpenChat(convo._id);
+    } catch (err) {
+      console.error('Failed to start chat:', err.message);
+    }
+  }, [conversations, currentUser, handleOpenChat]);
+
   // 8. Open Payment Portal
   const handleOpenPaymentPortal = (contract) => {
     setPaymentPortalContract(contract);
@@ -506,7 +591,7 @@ export default function App() {
         userAvatar={displayUser.avatar}
         escrowTotal={escrowTotal}
         unreadMessages={unreadMessages}
-        onOpenChat={handleOpenMostRecentChat}
+        onOpenChat={handleOpenChatList}
       />
 
       {/* Logout button — top-right overlay */}
@@ -526,7 +611,7 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* Role Toggle */}
-        <RoleToggle role={role} onChange={(selected) => setRole(selected)} />
+        <RoleToggle role={role} onChange={handleRoleSwitch} />
 
         {/* Nav Tabs */}
         <div id="role-dependent-tabs" className="bg-zinc-900/60 p-1.5 rounded-xl border border-zinc-800/80 flex items-center justify-between gap-4">
@@ -613,9 +698,12 @@ export default function App() {
                 gigs={gigs}
                 applications={applications}
                 contracts={contracts}
+                conversations={conversations}
                 onApproveApplication={handleApproveApplication}
                 onRejectApplication={handleRejectApplication}
                 onCancelGig={handleCancelGig}
+                onEditGig={handleEditGig}
+                onStartChat={handleStartChatWithApplicant}
                 onOpenContract={handleOpenExistingContract}
                 onOpenPayment={handleOpenPaymentPortal}
               />
@@ -712,11 +800,13 @@ export default function App() {
       <ChatDrawer
         isOpen={isChatOpen}
         onClose={handleCloseChat}
+        conversations={conversations}
         conversation={activeConversation}
         messages={chatMessages}
         currentUserId={currentUser._id}
         currentRole={role}
         onSend={handleSendMessage}
+        onSelectConversation={handleOpenChat}
         loading={chatLoading}
       />
 

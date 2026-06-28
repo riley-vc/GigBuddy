@@ -29,7 +29,7 @@ export default function Header({ role, userName, userAvatar, escrowTotal, unread
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <div className="font-mono text-xs">
                 <span className="text-zinc-500">Escrow Secured: </span>
-                <span className="text-emerald-400 font-bold">${escrowTotal}</span>
+                <span className="text-emerald-400 font-bold">₱{escrowTotal.toLocaleString()}</span>
               </div>
             </div>
 

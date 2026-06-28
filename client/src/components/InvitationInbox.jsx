@@ -1,4 +1,4 @@
-import { MessageSquare, Bell, Calendar, DollarSign, MapPin, ChevronRight, Mail } from 'lucide-react';
+import { MessageSquare, Bell, Calendar, MapPin, ChevronRight, Mail } from 'lucide-react';
 
 function StatusPill({ status }) {
   const map = {
@@ -115,7 +115,7 @@ export default function InvitationInbox({
                     )}
                     {convo.gigBudget > 0 && (
                       <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-mono">
-                        <DollarSign className="w-3 h-3" />{convo.gigBudget.toLocaleString()}
+                        ₱{convo.gigBudget.toLocaleString()}
                       </span>
                     )}
                   </div>

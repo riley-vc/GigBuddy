@@ -2,26 +2,36 @@
  * GigBag Seed Script — Philippines Context
  * Run: node seed.js  (from /server directory)
  * Drops and re-creates all collections with PH-flavored sample data.
+ *
+ * Also exports runSeed() for use by the /api/dev/seed endpoint
+ * (called from the in-app Sandbox Refresh button).
  */
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import User from './models/User.js';
-import Gig from './models/Gig.js';
-import Application from './models/Application.js';
-import Contract from './models/Contract.js';
+import User         from './models/User.js';
+import Gig          from './models/Gig.js';
+import Application  from './models/Application.js';
+import Contract     from './models/Contract.js';
+import Conversation from './models/Conversation.js';
+import Message      from './models/Message.js';
 
 dotenv.config();
 
-async function seed() {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('✅ MongoDB connected');
-
+/**
+ * Core seed logic. Assumes Mongoose is already connected.
+ * Returns the created mock user IDs so callers can use them.
+ */
+export async function runSeed() {
   // --- Wipe existing data ---
-  await User.deleteMany({});
-  await Gig.deleteMany({});
-  await Application.deleteMany({});
-  await Contract.deleteMany({});
+  await Promise.all([
+    User.deleteMany({}),
+    Gig.deleteMany({}),
+    Application.deleteMany({}),
+    Contract.deleteMany({}),
+    Conversation.deleteMany({}),
+    Message.deleteMany({}),
+  ]);
   console.log('🗑️  Cleared existing collections');
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -119,7 +129,7 @@ async function seed() {
       genres: ['OPM', 'Acoustic', 'Wedding Pop'],
       instruments: ['Acoustic Guitar', 'Vocals'],
       backlineProvided: ['Bose L1 Compact System', 'Shure SM137 Instrument Mic', 'Vocal Condenser Mic', 'DI Box'],
-      description: 'Elegant outdoor garden wedding in Tagaytay. Need a polished acoustic guitar-vocal duo. Songs include Faithfully (Journey), Here and Now (Luther Vandross), Ikaw (Yeng Constantino), and Can\'t Help Falling in Love. Smart casual attire. Venue provides full catering for the duo. Must have own reliable transport to Tagaytay.',
+      description: "Elegant outdoor garden wedding in Tagaytay. Need a polished acoustic guitar-vocal duo. Songs include Faithfully (Journey), Here and Now (Luther Vandross), Ikaw (Yeng Constantino), and Can't Help Falling in Love. Smart casual attire. Venue provides full catering for the duo. Must have own reliable transport to Tagaytay.",
       status: 'open',
     },
     {
@@ -148,12 +158,14 @@ async function seed() {
     {
       gigId: gig1._id,
       musicianId: bea._id,
+      organizerId: maria._id,
       musicianName: 'Bea Villanueva',
       musicianAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+      organizerName: 'Maria Santos',
       instrument: 'Vocals & Piano',
       skills: ['OPM ballads', 'Kundiman standards', 'Bossa nova', 'Jazz chords', 'Fluent Cebuano repertoire'],
       sampleVideoUrl: 'https://www.youtube.com/watch?v=demo-bea',
-      coverNote: 'Magandang araw po! I\'m Bea, a professional vocalist-pianist from Cebu with 6 years of lounge and events experience. I have a full repertoire of APO Hiking Society, Eraserheads era OPM, and kundiman classics. My piano voicings are clean and elegant — perfect for a corporate dinner setting. Happy to provide a brief audio demo!',
+      coverNote: "Magandang araw po! I'm Bea, a professional vocalist-pianist from Cebu with 6 years of lounge and events experience. I have a full repertoire of APO Hiking Society, Eraserheads era OPM, and kundiman classics. My piano voicings are clean and elegant — perfect for a corporate dinner setting. Happy to provide a brief audio demo!",
       status: 'pending',
       initiatedBy: 'musician',
       appliedAt: new Date('2026-06-24'),
@@ -161,12 +173,14 @@ async function seed() {
     {
       gigId: gig2._id,
       musicianId: jomar._id,
+      organizerId: maria._id,
       musicianName: 'Jomar "JR" Ramos',
       musicianAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+      organizerName: 'Maria Santos',
       instrument: 'Electric Guitar (Lead)',
       skills: ['Bisrock lead riffs', 'High-range backing vocals', 'Parokya & Rivermaya catalog', 'Kemper tones'],
       sampleVideoUrl: 'https://www.youtube.com/watch?v=demo-jr',
-      coverNote: 'Hey! Jomar here. I\'ve played B-Side, 70s Bistro, and Route 196 and have the full Bisrock catalog memorized from Parokya to Bamboo to Rivermaya. I use a Kemper Profiler direct to FOH for zero-noise, instant-perfect tones. Backing vocals up to high G on chord. Malaya tayo. Let\'s rock Pilipinas!',
+      coverNote: "Hey! Jomar here. I've played B-Side, 70s Bistro, and Route 196 and have the full Bisrock catalog memorized from Parokya to Bamboo to Rivermaya. I use a Kemper Profiler direct to FOH for zero-noise, instant-perfect tones. Backing vocals up to high G on chord. Malaya tayo. Let's rock Pilipinas!",
       status: 'pending',
       initiatedBy: 'musician',
       appliedAt: new Date('2026-06-25'),
@@ -195,17 +209,24 @@ async function seed() {
   ]);
 
   console.log(`📄 Created ${1} archived contract`);
-
   console.log('\n🌱 Seed complete! 🇵🇭');
   console.log(`\nMock user IDs for Phase 1 hardcoded auth:`);
   console.log(`  Organizer (Maria Santos): ${maria._id}`);
   console.log(`  Musician  (Carlo Reyes):  ${carlo._id}`);
 
+  return { maria, carlo };
+}
+
+// ── Standalone CLI entry point ────────────────────────────────────────────────
+async function main() {
+  await mongoose.connect(process.env.MONGO_URI);
+  console.log('✅ MongoDB connected');
+  await runSeed();
   await mongoose.disconnect();
   process.exit(0);
 }
 
-seed().catch((err) => {
+main().catch((err) => {
   console.error('❌ Seed failed:', err);
   process.exit(1);
 });

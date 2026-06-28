@@ -1,25 +1,233 @@
 import { useState } from 'react';
-import { Calendar, Users, Briefcase, FileSignature, Check, X, Shield, FileText, ArrowRight } from 'lucide-react';
+import {
+  Calendar, Users, Briefcase, FileSignature, Check, X, Shield,
+  FileText, ArrowRight, Pencil, MessageSquare, ChevronDown, ChevronUp,
+} from 'lucide-react';
 
+// ─── Genre / Instrument presets (mirrors GigCreatorForm) ─────────────────────
+const GENRE_PRESETS = ['OPM', 'Bisrock', 'P-pop', 'Kundiman', 'Jazz-OPM', 'R&B', 'Hip-hop', 'Reggae', 'Rock', 'Pop', 'EDM'];
+const INSTRUMENT_PRESETS = ['Electric Guitar', 'Bass Guitar', 'Acoustic Guitar', 'Drums', 'Keyboard', 'Vocals', 'Violin', 'Saxophone', 'DJ Setup'];
+
+function tomorrow() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
+}
+
+// ─── Edit Gig Modal ───────────────────────────────────────────────────────────
+function EditGigModal({ gig, onSave, onClose }) {
+  const toDateInput = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toISOString().split('T')[0];
+  };
+
+  const [title, setTitle]               = useState(gig.title || '');
+  const [venueName, setVenueName]       = useState(gig.venueName || '');
+  const [date, setDate]                 = useState(toDateInput(gig.date));
+  const [soundcheckTime, setSoundcheck] = useState(gig.soundcheckTime || '');
+  const [setTime, setSetTime]           = useState(gig.setTime || '');
+  const [endTime, setEndTime]           = useState(gig.endTime || '');
+  const [budget, setBudget]             = useState(gig.budget?.toString() || '');
+  const [description, setDescription]  = useState(gig.description || '');
+  const [genres, setGenres]             = useState(gig.genres || []);
+  const [instruments, setInstruments]  = useState(gig.instruments || []);
+  const [errors, setErrors]            = useState({});
+  const [saving, setSaving]            = useState(false);
+
+  const toggle = (list, setList, val) =>
+    setList((prev) => prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]);
+
+  const validate = () => {
+    const e = {};
+    if (!title.trim()) e.title = 'Title is required';
+    if (!venueName.trim()) e.venueName = 'Venue is required';
+    if (!date) {
+      e.date = 'Date is required';
+    } else {
+      const sel = new Date(date);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      if (sel <= today) e.date = 'Must be a future date';
+    }
+    if (!budget || Number(budget) <= 0) e.budget = 'Valid budget required';
+    return Object.keys(e).length === 0 ? null : e;
+  };
+
+  const handleSave = async () => {
+    const errs = validate();
+    if (errs) { setErrors(errs); return; }
+    setSaving(true);
+    try {
+      await onSave(gig.id || gig._id, {
+        title: title.trim(),
+        venueName: venueName.trim(),
+        date,
+        soundcheckTime,
+        setTime,
+        endTime,
+        budget: Number(budget),
+        description: description.trim(),
+        genres,
+        instruments,
+      });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const field = 'w-full bg-zinc-950 border border-zinc-800 text-zinc-50 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-violet-500 transition-colors';
+  const err   = 'text-xs text-amber-400 mt-1';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="relative w-full max-w-xl bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-violet-600/20 border border-violet-500/20 flex items-center justify-center">
+              <Pencil className="w-4 h-4 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-zinc-50">Edit Event Details</p>
+              <p className="text-[10px] text-zinc-500 font-mono">Only open gigs can be edited</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800 transition-colors cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Gig Title</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className={field} placeholder="e.g. Rooftop Jazz Night" />
+            {errors.title && <p className={err}>{errors.title}</p>}
+          </div>
+
+          {/* Venue */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Venue</label>
+            <input value={venueName} onChange={(e) => setVenueName(e.target.value)} className={field} placeholder="e.g. BGC Arts Center" />
+            {errors.venueName && <p className={err}>{errors.venueName}</p>}
+          </div>
+
+          {/* Date + Budget */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Date</label>
+              <input type="date" value={date} min={tomorrow()} onChange={(e) => setDate(e.target.value)} className={field} />
+              {errors.date && <p className={err}>{errors.date}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Budget (₱)</label>
+              <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)} className={field} placeholder="0" min="0" />
+              {errors.budget && <p className={err}>{errors.budget}</p>}
+            </div>
+          </div>
+
+          {/* Times */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Soundcheck', val: soundcheckTime, set: setSoundcheck },
+              { label: 'Set Start', val: setTime, set: setSetTime },
+              { label: 'End', val: endTime, set: setEndTime },
+            ].map(({ label, val, set }) => (
+              <div key={label}>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">{label}</label>
+                <input type="time" value={val} onChange={(e) => set(e.target.value)} className={field} />
+              </div>
+            ))}
+          </div>
+
+          {/* Genres */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Genres</label>
+            <div className="flex flex-wrap gap-1.5">
+              {GENRE_PRESETS.map((g) => (
+                <button key={g} type="button" onClick={() => toggle(genres, setGenres, g)}
+                  className={`px-2.5 py-1 text-xs rounded transition-colors cursor-pointer ${genres.includes(g) ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'}`}>
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Instruments */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Instruments Needed</label>
+            <div className="flex flex-wrap gap-1.5">
+              {INSTRUMENT_PRESETS.map((i) => (
+                <button key={i} type="button" onClick={() => toggle(instruments, setInstruments, i)}
+                  className={`px-2.5 py-1 text-xs rounded transition-colors cursor-pointer ${instruments.includes(i) ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'}`}>
+                  {i}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Description</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
+              className={`${field} resize-none`} placeholder="Event details..." />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-zinc-800 shrink-0 flex gap-3 justify-end">
+          <button onClick={onClose} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-semibold transition-colors cursor-pointer">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="px-5 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg text-sm font-bold transition-all shadow-md shadow-violet-600/20 cursor-pointer">
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main OrganizerDashboard ──────────────────────────────────────────────────
 export default function OrganizerDashboard({
   gigs,
   applications,
   contracts,
+  conversations,
   onApproveApplication,
   onRejectApplication,
   onCancelGig,
   onOpenContract,
   onOpenPayment,
+  onEditGig,
+  onStartChat,
 }) {
-  const [activeTab, setActiveTab] = useState('managed');
+  const [activeTab, setActiveTab]   = useState('managed');
+  const [editingGig, setEditingGig] = useState(null);
 
   // Stats
-  const activeOpenCalls = gigs.filter((g) => g.status === 'open').length;
-  const pendingApps = applications.filter((a) => a.status === 'pending').length;
+  const activeOpenCalls  = gigs.filter((g) => g.status === 'open').length;
+  const pendingApps      = applications.filter((a) => a.status === 'pending').length;
   const confirmedBookings = gigs.filter((g) => g.status === 'filled').length;
 
   return (
     <div id="organizer-dashboard-wrapper" className="space-y-6">
+
+      {/* Edit Gig Modal */}
+      {editingGig && (
+        <EditGigModal
+          gig={editingGig}
+          onSave={onEditGig}
+          onClose={() => setEditingGig(null)}
+        />
+      )}
+
       {/* Metrics Row */}
       <div id="organizer-metrics-row" className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
@@ -37,7 +245,7 @@ export default function OrganizerDashboard({
           <div className="space-y-1">
             <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Pending Applications</span>
             <span className="text-3xl font-extrabold text-amber-400 block">{pendingApps}</span>
-            <span className="text-[10px] text-zinc-400 block">Requires vetting & approval</span>
+            <span className="text-[10px] text-zinc-400 block">Requires vetting &amp; approval</span>
           </div>
           <div className="w-12 h-12 rounded-lg bg-amber-500/10 border border-amber-500/10 flex items-center justify-center text-amber-400">
             <Users className="w-5 h-5" />
@@ -48,7 +256,7 @@ export default function OrganizerDashboard({
           <div className="space-y-1">
             <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Confirmed Bookings</span>
             <span className="text-3xl font-extrabold text-emerald-400 block">{confirmedBookings}</span>
-            <span className="text-[10px] text-zinc-400 block">Escrow locked & verified</span>
+            <span className="text-[10px] text-zinc-400 block">Escrow locked &amp; verified</span>
           </div>
           <div className="w-12 h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/10 flex items-center justify-center text-emerald-400">
             <Shield className="w-5 h-5" />
@@ -59,9 +267,9 @@ export default function OrganizerDashboard({
       {/* Sub-Tabs */}
       <div id="organizer-tabs-nav" className="flex border-b border-zinc-800">
         {[
-          { key: 'managed', label: `My Events (${gigs.length})` },
+          { key: 'managed',    label: `My Events (${gigs.length})` },
           { key: 'applicants', label: `Review Candidates (${pendingApps})`, dot: pendingApps > 0 },
-          { key: 'contracts', label: `MoA Agreements (${contracts.length})` },
+          { key: 'contracts',  label: `MoA Agreements (${contracts.length})` },
         ].map(({ key, label, dot }) => (
           <button
             key={key}
@@ -98,8 +306,9 @@ export default function OrganizerDashboard({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {gigs.map((gig) => {
-                  const gigApps = applications.filter((a) => (a.gigId?._id || a.gigId) === gig.id);
+                  const gigApps       = applications.filter((a) => (a.gigId?._id || a.gigId) === gig.id);
                   const activeAppCount = gigApps.filter((a) => a.status === 'pending').length;
+                  const isOpen        = gig.status === 'open';
 
                   return (
                     <div key={gig.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors flex flex-col justify-between space-y-4">
@@ -139,7 +348,17 @@ export default function OrganizerDashboard({
                           <strong>{gigApps.length}</strong> applicants ({activeAppCount} pending)
                         </span>
                         <div className="flex gap-2">
-                          {gig.status === 'open' && (
+                          {/* Edit — only for open gigs */}
+                          {isOpen && (
+                            <button
+                              id={`edit-gig-${gig.id}`}
+                              onClick={() => setEditingGig(gig)}
+                              className="px-2.5 py-1.5 bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-violet-400 hover:border-violet-500/30 rounded text-[11px] font-semibold transition-colors flex items-center gap-1"
+                            >
+                              <Pencil className="w-3 h-3" /> Edit
+                            </button>
+                          )}
+                          {isOpen && (
                             <button
                               id={`cancel-gig-${gig.id}`}
                               onClick={() => onCancelGig(gig.id)}
@@ -171,7 +390,7 @@ export default function OrganizerDashboard({
         {activeTab === 'applicants' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-zinc-100 text-sm">Incoming Applications & Pending Invitations</h3>
+              <h3 className="font-semibold text-zinc-100 text-sm">Incoming Applications &amp; Pending Invitations</h3>
               <div className="flex gap-2 text-[10px] font-mono text-zinc-500">
                 <span className="px-2 py-0.5 bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded">Self-Applied</span>
                 <span className="px-2 py-0.5 bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 rounded">Organizer Invite</span>
@@ -201,7 +420,7 @@ export default function OrganizerDashboard({
                             className="w-12 h-12 rounded-xl object-cover border border-zinc-800 shrink-0"
                           />
                           <div className="space-y-2 flex-1">
-                           <div>
+                            <div>
                               <h4 className="font-bold text-zinc-100 text-base flex items-center gap-2 flex-wrap">
                                 {app.musicianName || 'Unknown Musician'}
                                 <span className="px-2 py-0.5 bg-zinc-950 border border-zinc-800 text-[9px] font-mono font-normal text-violet-400 rounded">
@@ -245,6 +464,17 @@ export default function OrganizerDashboard({
                               <span className="text-sm font-bold text-emerald-400 font-mono">₱{associatedGig.budget?.toLocaleString()}</span>
                             </div>
                           )}
+
+                          {/* Start Chat — always available */}
+                          <button
+                            id={`start-chat-${app.id || app._id}`}
+                            onClick={() => onStartChat(app, associatedGig)}
+                            className="w-full md:w-auto px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-violet-500/40 text-zinc-300 hover:text-violet-300 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Chat
+                          </button>
+
                           <div className="flex gap-2 w-full md:w-auto">
                             <button
                               id={`reject-app-${app.id || app._id}`}
@@ -260,7 +490,7 @@ export default function OrganizerDashboard({
                               className="flex-1 md:flex-none px-4 py-2 bg-violet-600 hover:bg-violet-500 text-zinc-50 rounded-lg text-xs font-semibold shadow-md shadow-violet-600/10 transition-all flex items-center justify-center gap-1.5"
                             >
                               <Check className="w-3.5 h-3.5" />
-                              Approve & Draft MoA
+                              Approve &amp; Draft MoA
                             </button>
                           </div>
                         </div>
@@ -275,7 +505,7 @@ export default function OrganizerDashboard({
         {/* C. MoA Contracts */}
         {activeTab === 'contracts' && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-zinc-100 text-sm">Memorandums of Agreement & Escrow States</h3>
+            <h3 className="font-semibold text-zinc-100 text-sm">Memorandums of Agreement &amp; Escrow States</h3>
 
             {contracts.length === 0 ? (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center space-y-1">
@@ -308,7 +538,6 @@ export default function OrganizerDashboard({
                       </div>
 
                       <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-zinc-800/60 pt-3.5 md:pt-0 flex-wrap">
-                        {/* Status badge */}
                         <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold font-mono ${
                           st === 'fully_signed'     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                           : st === 'funded'         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -322,7 +551,6 @@ export default function OrganizerDashboard({
                         </span>
 
                         <div className="flex gap-2 items-center">
-                          {/* View MoA */}
                           <button
                             id={`open-contract-${cid}`}
                             onClick={() => onOpenContract(contract)}
@@ -332,7 +560,6 @@ export default function OrganizerDashboard({
                             View MoA
                           </button>
 
-                          {/* Deposit Funds CTA (fully_signed only) */}
                           {st === 'fully_signed' && (
                             <button
                               id={`deposit-funds-${cid}`}
@@ -343,7 +570,6 @@ export default function OrganizerDashboard({
                             </button>
                           )}
 
-                          {/* Release Payment CTA (funded only) */}
                           {st === 'funded' && (
                             <button
                               id={`release-payment-${cid}`}

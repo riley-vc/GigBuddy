@@ -40,7 +40,15 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
     const e = {};
     if (!title.trim()) e.title = 'Gig title is required';
     if (!venueName.trim()) e.venueName = 'Venue name is required';
-    if (!date) e.date = 'Performance date is required';
+    if (!date) {
+      e.date = 'Performance date is required';
+    } else {
+      // Must be strictly in the future (not today, not past)
+      const selected = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selected <= today) e.date = 'Performance date must be a future date (not today or earlier)';
+    }
     if (!soundcheckTime) e.soundcheckTime = 'Soundcheck time is required';
     if (!setTime) e.setTime = 'Set time is required';
     if (!endTime) e.endTime = 'End time is required';
@@ -173,6 +181,7 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
                   id="input-date"
                   type="date"
                   value={date}
+                  min={(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })()}
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 text-zinc-50 rounded-lg py-2.5 pl-10 pr-3.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors"
                 />
@@ -341,7 +350,7 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
           <div className="mt-4 p-3 bg-zinc-950 border border-zinc-800 rounded-lg flex items-center justify-between">
             <div className="text-xs">
               <span className="text-zinc-500 block">Offer (Escrow Secured)</span>
-              <span className="text-lg font-bold text-emerald-400 font-mono">${budget || '0'}</span>
+              <span className="text-lg font-bold text-emerald-400 font-mono">₱{budget ? Number(budget).toLocaleString() : '0'}</span>
             </div>
             <div className="text-right text-xs">
               <span className="text-zinc-500 block">Required Instruments</span>
