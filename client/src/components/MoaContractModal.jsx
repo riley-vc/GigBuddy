@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { X, Shield, FileText, CheckCircle } from 'lucide-react';
 
-export default function MoaContractModal({ isOpen, onClose, contract, onSign, role }) {
-  const [signatureText, setSignatureText] = useState('');
+export default function MoaContractModal({ isOpen, onClose, contract, onSign, role, currentUser }) {
+  const [signatureText, setSignatureText] = useState(currentUser?.name || '');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState('');
 
@@ -168,7 +168,7 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
                 <input
                   id="moa-signature-input"
                   type="text"
-                  placeholder="e.g. Carlo Reyes"
+                  placeholder={currentUser?.name || 'e.g. Carlo Reyes'}
                   value={signatureText}
                   onChange={(e) => setSignatureText(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 text-zinc-50 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"

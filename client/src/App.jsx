@@ -756,6 +756,7 @@ export default function App() {
         contract={draftContract}
         onSign={handleSignContract}
         role={role}
+        currentUser={currentUser}
       />
 
       {/* Payment Portal Modal */}
