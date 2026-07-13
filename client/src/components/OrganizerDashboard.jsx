@@ -229,36 +229,36 @@ export default function OrganizerDashboard({
       )}
 
       {/* Metrics Row */}
-      <div id="organizer-metrics-row" className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Active Open Calls</span>
-            <span className="text-3xl font-extrabold text-zinc-50 block">{activeOpenCalls}</span>
-            <span className="text-[10px] text-zinc-400 block">Sourcing live musicians</span>
+      <div id="organizer-metrics-row" className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-zinc-900 border border-zinc-800 p-3 sm:p-5 rounded-xl flex items-center justify-between shadow-sm">
+          <div className="space-y-0.5 sm:space-y-1">
+            <span className="text-zinc-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider block">Open Calls</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-zinc-50 block">{activeOpenCalls}</span>
+            <span className="text-[10px] text-zinc-400 block hidden sm:block">Sourcing live musicians</span>
           </div>
-          <div className="w-12 h-12 rounded-lg bg-violet-600/10 border border-violet-500/10 flex items-center justify-center text-violet-400">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-violet-600/10 border border-violet-500/10 items-center justify-center text-violet-400 hidden sm:flex">
             <Briefcase className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Pending Applications</span>
-            <span className="text-3xl font-extrabold text-amber-400 block">{pendingApps}</span>
-            <span className="text-[10px] text-zinc-400 block">Requires vetting &amp; approval</span>
+        <div className="bg-zinc-900 border border-zinc-800 p-3 sm:p-5 rounded-xl flex items-center justify-between shadow-sm">
+          <div className="space-y-0.5 sm:space-y-1">
+            <span className="text-zinc-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider block">Pending</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-amber-400 block">{pendingApps}</span>
+            <span className="text-[10px] text-zinc-400 block hidden sm:block">Requires vetting &amp; approval</span>
           </div>
-          <div className="w-12 h-12 rounded-lg bg-amber-500/10 border border-amber-500/10 flex items-center justify-center text-amber-400">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-amber-500/10 border border-amber-500/10 items-center justify-center text-amber-400 hidden sm:flex">
             <Users className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Confirmed Bookings</span>
-            <span className="text-3xl font-extrabold text-emerald-400 block">{confirmedBookings}</span>
-            <span className="text-[10px] text-zinc-400 block">Escrow locked &amp; verified</span>
+        <div className="bg-zinc-900 border border-zinc-800 p-3 sm:p-5 rounded-xl flex items-center justify-between shadow-sm">
+          <div className="space-y-0.5 sm:space-y-1">
+            <span className="text-zinc-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider block">Confirmed</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-emerald-400 block">{confirmedBookings}</span>
+            <span className="text-[10px] text-zinc-400 block hidden sm:block">Escrow locked &amp; verified</span>
           </div>
-          <div className="w-12 h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/10 flex items-center justify-center text-emerald-400">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/10 items-center justify-center text-emerald-400 hidden sm:flex">
             <Shield className="w-5 h-5" />
           </div>
         </div>

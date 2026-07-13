@@ -60,8 +60,8 @@ export default function PaymentPortalModal({
   }
 
   return (
-    <div id="payment-portal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+    <div id="payment-portal-overlay" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
+      <div className="w-full sm:max-w-md bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
 
         {/* ── Header ─────────────────────────────────────────────────────────── */}
         <div className="p-5 border-b border-zinc-800 flex items-center justify-between">

@@ -4,6 +4,23 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-display: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --bottom-nav-h: 64px;
+}
+
+/* Mobile: eliminate 300ms tap delay on all interactive elements */
+* {
+  touch-action: manipulation;
+}
+
+/* Safe-area padding utilities for iPhone notch / home bar */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.mb-bottom-nav {
+  margin-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
 }
 
 /* Scrollbar hide utility */
@@ -55,4 +72,18 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Slide-up animation for mobile bottom sheets */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Prevent iOS input zoom — enforce 16px minimum on all inputs */
+input, textarea, select {
+  font-size: max(16px, 1em);
 }

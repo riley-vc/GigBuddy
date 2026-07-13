@@ -74,7 +74,7 @@ export default function LoginPage({ onSwitchToRegister }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/60 border border-zinc-700/60 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500/70 focus:bg-zinc-800 transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-zinc-800/60 border border-zinc-700/60 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500/70 focus:bg-zinc-800 transition-all"
                 />
               </div>
             </div>
@@ -93,7 +93,7 @@ export default function LoginPage({ onSwitchToRegister }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/60 border border-zinc-700/60 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500/70 focus:bg-zinc-800 transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-zinc-800/60 border border-zinc-700/60 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500/70 focus:bg-zinc-800 transition-all"
                 />
               </div>
             </div>
@@ -103,7 +103,7 @@ export default function LoginPage({ onSwitchToRegister }) {
               id="btn-login-submit"
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-violet-900/40 mt-2"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-violet-900/40 mt-2"
             >
               {loading ? (
                 <>
@@ -129,17 +129,74 @@ export default function LoginPage({ onSwitchToRegister }) {
           </p>
         </div>
 
-        {/* Seeded account hint */}
-        <div className="mt-6 p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-xl text-center space-y-1">
-          <p className="text-[11px] font-mono text-zinc-500 font-semibold">SEEDED TEST ACCOUNTS</p>
-          <p className="text-[11px] font-mono text-zinc-600">
-            <span className="text-fuchsia-400">Organizer</span> maria@skydeck.com.ph
-          </p>
-          <p className="text-[11px] font-mono text-zinc-600">
-            <span className="text-violet-400">Musician</span> carlo@gigbag.ph
-          </p>
-          <p className="text-[11px] font-mono text-zinc-700">password: password123</p>
+
+        {/* Test Accounts Panel */}
+        <div className="mt-5 rounded-xl border border-zinc-800 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-zinc-900/80 border-b border-zinc-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+              Demo Accounts — Tap to Auto-Fill
+            </span>
+          </div>
+
+          {/* Organizer row */}
+          <button
+            id="demo-fill-organizer"
+            type="button"
+            onClick={() => { setEmail('maria@skydeck.com.ph'); setPassword('password123'); }}
+            className="w-full flex items-center gap-3 px-4 py-3.5 bg-zinc-950 hover:bg-zinc-900 transition-colors text-left border-b border-zinc-800/60 cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center shrink-0">
+              <span className="text-fuchsia-400 text-xs font-bold">EP</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-zinc-200 group-hover:text-zinc-50 transition-colors">
+                Maria Santos
+                <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 rounded uppercase tracking-wide">
+                  Event Planner
+                </span>
+              </p>
+              <p className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">maria@skydeck.com.ph</p>
+            </div>
+            <span className="text-[10px] font-mono text-zinc-600 group-hover:text-violet-400 transition-colors shrink-0">
+              Use →
+            </span>
+          </button>
+
+          {/* Musician row */}
+          <button
+            id="demo-fill-musician"
+            type="button"
+            onClick={() => { setEmail('carlo@gigbag.ph'); setPassword('password123'); }}
+            className="w-full flex items-center gap-3 px-4 py-3.5 bg-zinc-950 hover:bg-zinc-900 transition-colors text-left cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+              <span className="text-violet-400 text-xs font-bold">M</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-zinc-200 group-hover:text-zinc-50 transition-colors">
+                Carlo Reyes
+                <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded uppercase tracking-wide">
+                  Musician
+                </span>
+              </p>
+              <p className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">carlo@gigbag.ph</p>
+            </div>
+            <span className="text-[10px] font-mono text-zinc-600 group-hover:text-violet-400 transition-colors shrink-0">
+              Use →
+            </span>
+          </button>
+
+          {/* Password note */}
+          <div className="px-4 py-2 bg-zinc-900/40 flex items-center justify-between">
+            <span className="text-[10px] text-zinc-600 font-mono">Password for both accounts:</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded">
+              password123
+            </span>
+          </div>
         </div>
+
       </div>
     </div>
   );

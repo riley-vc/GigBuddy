@@ -46,10 +46,10 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
     role === 'organizer' ? !!contract.organizerSignature : !!contract.musicianSignature;
 
   return (
-    <div id="moa-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div id="moa-modal-overlay" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
       <div
         id="moa-modal-container"
-        className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        className="w-full sm:max-w-2xl bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
       >
         {/* Header */}
         <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">

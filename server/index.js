@@ -23,13 +23,21 @@ const app        = express();
 const httpServer = createServer(app);
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-];
-
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+// Allow localhost + any LAN device (phones on same Wi-Fi)
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman) or from localhost/LAN
+    if (!origin) return callback(null, true);
+    const isLocal =
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://127.0.0.1') ||
+      /^http:\/\/192\.168\.\d+\.\d+/.test(origin) ||
+      /^http:\/\/10\.\d+\.\d+\.\d+/.test(origin)  ||
+      /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/.test(origin);
+    callback(null, isLocal);
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -50,7 +58,16 @@ app.get('/api/health', (_req, res) => {
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 const io = new SocketServer(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isLocal =
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        /^http:\/\/192\.168\.\d+\.\d+/.test(origin) ||
+        /^http:\/\/10\.\d+\.\d+\.\d+/.test(origin)  ||
+        /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/.test(origin);
+      callback(null, isLocal);
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
