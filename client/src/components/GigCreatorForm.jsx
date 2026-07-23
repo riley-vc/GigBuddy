@@ -74,7 +74,9 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
   };
 
   const handleNext = () => {
-    if (validateStep(step)) setStep((s) => Math.min(s + 1, 3));
+    if (validateStep(step)) {
+      setStep((s) => Math.min(s + 1, 3));
+    }
   };
 
   const handleBack = () => {
@@ -82,26 +84,35 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
     setStep((s) => Math.max(s - 1, 1));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [submitting, setSubmitting] = useState(false);
+
+  const handlePublish = async () => {
+    if (step !== 3) return;
     if (!validateStep(3)) return;
-    await onCreateGig({
-      title, venueName, date,
-      soundcheckTime, setTime, endTime,
-      budget: Number(budget),
-      genres, instruments, backlineProvided,
-      description,
-    });
-    // Reset
-    setTitle(''); setVenueName(''); setDate('');
-    setSoundcheckTime('18:00'); setSetTime('20:30'); setEndTime('23:00');
-    setBudget(''); setDescription('');
-    setGenres(['Jazz']); setInstruments(['Double Bass']); setBacklineProvided(['Direct Box (DI)']);
-    setStep(1);
-    onSuccess();
+    setSubmitting(true);
+    try {
+      await onCreateGig({
+        title, venueName, date,
+        soundcheckTime, setTime, endTime,
+        budget: Number(budget),
+        genres, instruments, backlineProvided,
+        description,
+      });
+      // Reset
+      setTitle(''); setVenueName(''); setDate('');
+      setSoundcheckTime('18:00'); setSetTime('20:30'); setEndTime('23:00');
+      setBudget(''); setDescription('');
+      setGenres(['Jazz']); setInstruments(['Double Bass']); setBacklineProvided(['Direct Box (DI)']);
+      setStep(1);
+      onSuccess();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const TagPicker = ({ label, items, selected, onToggle, customVal, setCustomVal, onAdd, errorKey }) => (
+  // TagPicker — inline helper renderer (not a separate React component to avoid
+  // identity-change re-mount issues; all its buttons use type="button" explicitly)
+  const renderTagPicker = ({ label, items, selected, onToggle, customVal, setCustomVal, onAdd, errorKey }) => (
     <div>
       <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">{label}</label>
       <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto p-2.5 bg-zinc-950 rounded-lg border border-zinc-800 mb-2">
@@ -127,7 +138,7 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
           placeholder={`Or add custom ${label.toLowerCase()}...`}
           value={customVal}
           onChange={(e) => setCustomVal(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), onAdd())}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onAdd(); } }}
           className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg py-2 px-3 text-zinc-300 focus:outline-none focus:border-zinc-700"
         />
         <button
@@ -180,7 +191,7 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
           })}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-5">
 
           {/* ── STEP 1: Event Info ──────────────────────────────────────── */}
           {step === 1 && (
@@ -296,27 +307,27 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
           {/* ── STEP 3: Talent Specs ────────────────────────────────────── */}
           {step === 3 && (
             <div className="space-y-5 animate-fade-in">
-              <TagPicker
-                label="Musical Genres"
-                items={GENRE_PRESETS}
-                selected={genres}
-                onToggle={(g) => toggle(genres, setGenres, g)}
-                customVal={customGenre}
-                setCustomVal={setCustomGenre}
-                onAdd={() => addCustom(customGenre, genres, setGenres, setCustomGenre)}
-                errorKey="genres"
-              />
+              {renderTagPicker({
+                label: 'Musical Genres',
+                items: GENRE_PRESETS,
+                selected: genres,
+                onToggle: (g) => toggle(genres, setGenres, g),
+                customVal: customGenre,
+                setCustomVal: setCustomGenre,
+                onAdd: () => addCustom(customGenre, genres, setGenres, setCustomGenre),
+                errorKey: 'genres',
+              })}
 
-              <TagPicker
-                label="Required Performance Instruments"
-                items={INSTRUMENT_PRESETS}
-                selected={instruments}
-                onToggle={(i) => toggle(instruments, setInstruments, i)}
-                customVal={customInstrument}
-                setCustomVal={setCustomInstrument}
-                onAdd={() => addCustom(customInstrument, instruments, setInstruments, setCustomInstrument)}
-                errorKey="instruments"
-              />
+              {renderTagPicker({
+                label: 'Required Performance Instruments',
+                items: INSTRUMENT_PRESETS,
+                selected: instruments,
+                onToggle: (i) => toggle(instruments, setInstruments, i),
+                customVal: customInstrument,
+                setCustomVal: setCustomInstrument,
+                onAdd: () => addCustom(customInstrument, instruments, setInstruments, setCustomInstrument),
+                errorKey: 'instruments',
+              })}
 
               {/* Backline */}
               <div>
@@ -387,10 +398,12 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
             ) : (
               <button
                 id="publish-gig-btn"
-                type="submit"
-                className="flex-1 bg-violet-600 hover:bg-violet-500 text-zinc-50 font-semibold rounded-lg py-3 text-sm transition-colors shadow-lg shadow-violet-600/20 hover:scale-[1.01] active:scale-[0.99] transform cursor-pointer"
+                type="button"
+                disabled={submitting}
+                onClick={handlePublish}
+                className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:bg-violet-900 disabled:cursor-not-allowed text-zinc-50 font-semibold rounded-lg py-3 text-sm transition-colors shadow-lg shadow-violet-600/20 hover:scale-[1.01] active:scale-[0.99] transform cursor-pointer"
               >
-                Publish Open Gig Call & Unlock Escrow Setup
+                {submitting ? 'Publishing…' : 'Publish Open Call'}
               </button>
             )}
           </div>

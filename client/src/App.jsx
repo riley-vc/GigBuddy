@@ -27,6 +27,7 @@ import MusicianDashboard from './components/MusicianDashboard.jsx';
 import GigMarketplace from './components/GigMarketplace.jsx';
 import ArtistMarketplace from './components/ArtistMarketplace.jsx';
 import ChatDrawer from './components/ChatDrawer.jsx';
+import OrganizerProfileModal from './components/OrganizerProfileModal.jsx';
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 // currentUser now comes from AuthContext (set by LoginPage / RegisterPage).
@@ -73,6 +74,9 @@ export default function App() {
 
   // ── Help Modal ────────────────────────────────────────────────────────────
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // ── Organizer Profile Modal ───────────────────────────────────────────────
+  const [isOrgProfileOpen, setIsOrgProfileOpen] = useState(false);
 
   // ── Initialise Socket.io ──────────────────────────────────────────────────
   useEffect(() => {
@@ -759,6 +763,20 @@ export default function App() {
         currentUser={currentUser}
       />
 
+      {/* Organizer Profile Modal */}
+      <OrganizerProfileModal
+        isOpen={isOrgProfileOpen}
+        onClose={() => setIsOrgProfileOpen(false)}
+        currentUser={profile}
+        onSave={async ({ name, bio }) => {
+          // Optimistically update local profile
+          setProfile((prev) => ({ ...prev, name, bio }));
+          // Persist to server (best-effort — Phase 1 has no PUT /api/users/:id yet,
+          // so we just update local state; Phase 2 will add the endpoint)
+          setIsOrgProfileOpen(false);
+        }}
+      />
+
       {/* Payment Portal Modal */}
       <PaymentPortalModal
         isOpen={isPaymentPortalOpen}
@@ -794,6 +812,7 @@ export default function App() {
         onOrganizerTab={setOrganizerTab}
         onMusicianTab={setMusicianTab}
         onOpenChat={handleOpenChatList}
+        onOrganizerProfile={() => setIsOrgProfileOpen(true)}
       />
 
       {/* Footer — hidden on mobile to save space */}

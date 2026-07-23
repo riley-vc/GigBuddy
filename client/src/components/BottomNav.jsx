@@ -1,4 +1,4 @@
-import { Briefcase, Users, Compass, Sparkles, Store, MessageSquare } from 'lucide-react';
+import { Briefcase, Users, Compass, Sparkles, Store, MessageSquare, UserCircle } from 'lucide-react';
 
 export default function BottomNav({
   role,
@@ -8,6 +8,7 @@ export default function BottomNav({
   onOrganizerTab,
   onMusicianTab,
   onOpenChat,
+  onOrganizerProfile,
 }) {
   return (
     <nav
@@ -15,7 +16,7 @@ export default function BottomNav({
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-zinc-950/95 backdrop-blur-xl border-t border-zinc-800"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}
     >
-      <div className="flex items-stretch justify-around px-2 pt-1.5 pb-1">
+      <div className="flex items-end justify-around px-2 pt-1.5 pb-1">
         {role === 'organizer' ? (
           <>
             {/* Dashboard */}
@@ -34,14 +35,10 @@ export default function BottomNav({
               active={organizerTab === 'artist_marketplace'}
               onClick={() => onOrganizerTab('artist_marketplace')}
             />
-            {/* Post Gig */}
-            <BottomNavItem
-              id="bnav-org-post"
-              label="Post Gig"
-              icon={<Sparkles className="w-5 h-5" />}
+            {/* Post Gig — FAB centre button */}
+            <PostGigFab
               active={organizerTab === 'create_gig'}
               onClick={() => onOrganizerTab('create_gig')}
-              accent
             />
             {/* Messages */}
             <BottomNavItem
@@ -50,6 +47,13 @@ export default function BottomNav({
               icon={<MessageSquare className="w-5 h-5" />}
               badge={unreadMessages}
               onClick={onOpenChat}
+            />
+            {/* Profile */}
+            <BottomNavItem
+              id="bnav-org-profile"
+              label="Profile"
+              icon={<UserCircle className="w-5 h-5" />}
+              onClick={onOrganizerProfile}
             />
           </>
         ) : (
@@ -85,7 +89,38 @@ export default function BottomNav({
   );
 }
 
-function BottomNavItem({ id, label, icon, active, onClick, badge = 0, accent = false }) {
+// ── Elevated circular FAB for "Post Gig" ────────────────────────────────────
+function PostGigFab({ active, onClick }) {
+  return (
+    <div className="relative flex flex-col items-center justify-end pb-1 flex-1">
+      {/* The elevated button lifts above the nav bar */}
+      <button
+        id="bnav-org-post"
+        onClick={onClick}
+        className={`
+          relative -mt-5 w-14 h-14 rounded-full flex items-center justify-center
+          shadow-xl transition-all cursor-pointer
+          ring-4 ring-zinc-950
+          ${active
+            ? 'bg-fuchsia-500 shadow-fuchsia-500/40 scale-105'
+            : 'bg-fuchsia-600 hover:bg-fuchsia-500 shadow-fuchsia-600/30 hover:scale-105 active:scale-95'
+          }
+        `}
+        aria-label="Post a Gig"
+      >
+        {/* Glow ring */}
+        <span className="absolute inset-0 rounded-full bg-fuchsia-500/20 blur-md pointer-events-none" />
+        <Sparkles className="w-6 h-6 text-white relative z-10" />
+      </button>
+      <span className={`text-[10px] font-semibold tracking-tight mt-1 ${active ? 'text-fuchsia-400' : 'text-zinc-500'}`}>
+        Post Gig
+      </span>
+    </div>
+  );
+}
+
+// ── Standard nav item ────────────────────────────────────────────────────────
+function BottomNavItem({ id, label, icon, active, onClick, badge = 0 }) {
   return (
     <button
       id={id}
@@ -93,12 +128,7 @@ function BottomNavItem({ id, label, icon, active, onClick, badge = 0, accent = f
       className={`
         relative flex flex-col items-center justify-center gap-0.5 flex-1
         min-h-[48px] px-1 py-1.5 rounded-xl transition-all cursor-pointer
-        ${active
-          ? 'text-violet-400'
-          : accent
-            ? 'text-fuchsia-400'
-            : 'text-zinc-500 hover:text-zinc-300'
-        }
+        ${active ? 'text-violet-400' : 'text-zinc-500 hover:text-zinc-300'}
       `}
     >
       {/* Active pill indicator */}

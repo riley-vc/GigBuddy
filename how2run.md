@@ -67,7 +67,7 @@ The app is mobile-first and can be tested on real devices over your local networ
    ```
    ➜  Network: http://192.168.x.x:5173/
    ```
-2. Make sure your phone is on the **same Wi-Fi** as your Mac.
+2. Make sure your phone is on the **same Wi-Fi** as your device.
 3. Open that URL in your phone's browser (Safari or Chrome).
 
 > The server's CORS is configured to allow all local network addresses (192.168.x.x, 10.x.x.x, etc.), so API calls from your phone work automatically.
