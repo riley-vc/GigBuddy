@@ -33,8 +33,7 @@ import OrganizerProfileModal from './components/OrganizerProfileModal.jsx';
 // currentUser now comes from AuthContext (set by LoginPage / RegisterPage).
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Socket singleton — created once, reused across re-renders
-const SOCKET_URL = 'http://localhost:4000';
+import { SOCKET_URL } from './api/config.js';
 
 export default function App() {
   const { currentUser, login, logout } = useAuth();

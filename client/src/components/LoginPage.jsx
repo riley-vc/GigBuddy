@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Music2, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { Music2, Mail, Lock, Loader2, AlertCircle, Download } from 'lucide-react';
 import { login as loginApi } from '../api/auth.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { usePWAInstall } from '../hooks/usePWAInstall.js';
 
 export default function LoginPage({ onSwitchToRegister }) {
   const { login } = useAuth();
+  const { canInstall, promptInstall } = usePWAInstall();
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -196,6 +198,18 @@ export default function LoginPage({ onSwitchToRegister }) {
             </span>
           </div>
         </div>
+
+        {/* PWA Install Prompt */}
+        {canInstall && (
+          <button
+            id="btn-pwa-install"
+            onClick={promptInstall}
+            className="pwa-install-prompt mt-4 w-full flex items-center justify-center gap-2 py-3 px-4 bg-zinc-900/80 hover:bg-zinc-800/80 border border-violet-500/30 text-violet-300 font-semibold text-sm rounded-xl transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            Install GigBag App
+          </button>
+        )}
 
       </div>
     </div>

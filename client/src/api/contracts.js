@@ -1,4 +1,6 @@
-const BASE = '/api/contracts';
+import { API_BASE } from './config.js';
+
+const BASE = `${API_BASE}/contracts`;
 
 export async function getContracts(params = {}) {
   const query = new URLSearchParams(params).toString();

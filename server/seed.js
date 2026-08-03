@@ -218,15 +218,22 @@ export async function runSeed() {
 }
 
 // ── Standalone CLI entry point ────────────────────────────────────────────────
-async function main() {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('✅ MongoDB connected');
-  await runSeed();
-  await mongoose.disconnect();
-  process.exit(0);
-}
+// Only run when executed directly: `node seed.js`
+// Does not auto-run when imported by other modules.
+const isMainModule = process.argv[1] &&
+  import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
 
-main().catch((err) => {
-  console.error('❌ Seed failed:', err);
-  process.exit(1);
-});
+if (isMainModule) {
+  (async () => {
+    try {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log('✅ MongoDB connected');
+      await runSeed();
+      await mongoose.disconnect();
+      process.exit(0);
+    } catch (err) {
+      console.error('❌ Seed failed:', err);
+      process.exit(1);
+    }
+  })();
+}

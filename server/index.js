@@ -17,25 +17,39 @@ import authRoutes         from './routes/auth.js';
 import Message      from './models/Message.js';
 import Conversation from './models/Conversation.js';
 
+import { runSeed } from './seed.js';
+
 dotenv.config();
 
 const app        = express();
 const httpServer = createServer(app);
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-// Allow localhost + any LAN device (phones on same Wi-Fi)
+// Production: allow origins from ALLOWED_ORIGINS env var (comma-separated)
+// Development: allow localhost + any LAN device (phones on same Wi-Fi)
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((s) => s.trim())
+  : [];
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // Allow requests with no origin (curl, Postman, same-origin)
+
+  // Check explicit allowed list (production Vercel URL, custom domains, etc.)
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Local dev: localhost + LAN addresses for phone testing
+  const isLocal =
+    origin.startsWith('http://localhost') ||
+    origin.startsWith('http://127.0.0.1') ||
+    /^http:\/\/192\.168\.\d+\.\d+/.test(origin) ||
+    /^http:\/\/10\.\d+\.\d+\.\d+/.test(origin)  ||
+    /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/.test(origin);
+
+  return isLocal;
+}
+
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (curl, Postman) or from localhost/LAN
-    if (!origin) return callback(null, true);
-    const isLocal =
-      origin.startsWith('http://localhost') ||
-      origin.startsWith('http://127.0.0.1') ||
-      /^http:\/\/192\.168\.\d+\.\d+/.test(origin) ||
-      /^http:\/\/10\.\d+\.\d+\.\d+/.test(origin)  ||
-      /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/.test(origin);
-    callback(null, isLocal);
-  },
+  origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
   credentials: true,
 }));
 app.use(express.json());
@@ -50,6 +64,17 @@ app.use('/api/contracts',     contractRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages',      messageRoutes);
 
+// Temporary seed endpoint since Render free tier has no shell
+app.get('/api/seed', async (req, res) => {
+  try {
+    await runSeed();
+    res.json({ success: true, message: '✅ Database seeded successfully!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, message: 'GigBag API is running 🎸' });
@@ -58,16 +83,7 @@ app.get('/api/health', (_req, res) => {
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 const io = new SocketServer(httpServer, {
   cors: {
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      const isLocal =
-        origin.startsWith('http://localhost') ||
-        origin.startsWith('http://127.0.0.1') ||
-        /^http:\/\/192\.168\.\d+\.\d+/.test(origin) ||
-        /^http:\/\/10\.\d+\.\d+\.\d+/.test(origin)  ||
-        /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/.test(origin);
-      callback(null, isLocal);
-    },
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
     methods: ['GET', 'POST'],
     credentials: true,
   },
