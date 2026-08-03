@@ -8,9 +8,12 @@
  */
 
 // For REST API calls
+// .replace(/\/+$/, '') safely removes any trailing slashes to prevent //api issues
 export const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
+  ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/api`
   : '/api';
 
 // For Socket.io connection
-export const SOCKET_URL = import.meta.env.VITE_API_URL || '';
+export const SOCKET_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/+$/, '')
+  : '';
