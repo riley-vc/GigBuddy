@@ -1,4 +1,6 @@
-const BASE = '/api/applications';
+import { API_BASE } from './config.js';
+
+const BASE = `${API_BASE}/applications`;
 
 export async function getApplications(params = {}) {
   const query = new URLSearchParams(params).toString();

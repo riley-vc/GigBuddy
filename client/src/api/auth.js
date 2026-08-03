@@ -1,4 +1,6 @@
-const BASE = '/api/auth';
+import { API_BASE } from './config.js';
+
+const BASE = `${API_BASE}/auth`;
 
 /**
  * Login with email + password.

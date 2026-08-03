@@ -1,4 +1,6 @@
-const BASE = '/api/users';
+import { API_BASE } from './config.js';
+
+const BASE = `${API_BASE}/users`;
 
 export async function getUsers(params = {}) {
   const query = new URLSearchParams(params).toString();

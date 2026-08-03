@@ -54,7 +54,7 @@ export default function MusicianDashboard({
   return (
     <div id="musician-dashboard-wrapper" className="space-y-6">
       {/* Stats Row */}
-      <div id="musician-stats-row" className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div id="musician-stats-row" className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl flex items-center justify-between shadow-sm">
           <div className="space-y-1">
             <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider block">Contracted Gigs</span>
@@ -151,7 +151,7 @@ export default function MusicianDashboard({
               <ToggleLeft className="w-5 h-5 text-violet-400 shrink-0" />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {Object.entries(profile.availability || {}).map(([day, status]) => (
                 <button
                   id={`availability-day-${day}`}

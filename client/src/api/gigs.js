@@ -1,4 +1,6 @@
-const BASE = '/api/gigs';
+import { API_BASE } from './config.js';
+
+const BASE = `${API_BASE}/gigs`;
 
 export async function getGigs(params = {}) {
   const query = new URLSearchParams(params).toString();

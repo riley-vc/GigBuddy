@@ -4,6 +4,42 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-display: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --bottom-nav-h: 64px;
+}
+
+/* Mobile: eliminate 300ms tap delay on all interactive elements */
+* {
+  touch-action: manipulation;
+}
+
+/* Prevent pull-to-refresh and overscroll bounce in PWA standalone mode */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PWA standalone mode adjustments */
+@media all and (display-mode: standalone) {
+  /* Extra top padding when running as installed PWA (status bar overlap) */
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Hide any "install app" prompts when already installed */
+  .pwa-install-prompt {
+    display: none !important;
+  }
+}
+
+/* Safe-area padding utilities for iPhone notch / home bar */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.mb-bottom-nav {
+  margin-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
 }
 
 /* Scrollbar hide utility */
@@ -55,4 +91,70 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Slide-up animation for mobile bottom sheets */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Page transition animation */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-page-in {
+  animation: pageIn 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Subtle press/tap feedback for buttons */
+@keyframes tapPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+.active\:tap-pulse:active {
+  animation: tapPulse 0.15s ease-out;
+}
+
+/* Ensure all interactive elements meet 44px minimum touch target */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Exception: inline text links and icon-only buttons with explicit sizing */
+a:not([class*="px-"]):not([class*="py-"]):not([class*="p-"]) {
+  min-height: unset;
+  min-width: unset;
+}
+
+/* Prevent iOS input zoom — enforce 16px minimum on all inputs */
+input, textarea, select {
+  font-size: max(16px, 1em);
+}
+
+/* Smooth momentum scrolling on mobile */
+.scroll-smooth-mobile {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Focus ring for accessibility */
+:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.6);
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

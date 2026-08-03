@@ -49,8 +49,8 @@ function InviteModal({ musician, openGigs, existingApplications, onSend, onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
+      <div className="w-full sm:max-w-lg bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -389,9 +389,9 @@ export default function ArtistMarketplace({
         </div>
 
         {/* Right: Artist Profile Detail */}
-        <div className="lg:col-span-7 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden">
+        <div className="lg:col-span-7 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden flex flex-col">
           {!selectedArtist ? (
-            <div className="h-[620px] flex items-center justify-center text-zinc-500 text-sm">
+            <div className="min-h-[200px] lg:h-[620px] flex items-center justify-center text-zinc-500 text-sm">
               Select an artist to view their profile
             </div>
           ) : (
@@ -436,8 +436,8 @@ export default function ArtistMarketplace({
                 </div>
               </div>
 
-              {/* Details */}
-              <div className="p-6 space-y-5 max-h-[380px] overflow-y-auto">
+              {/* Details — scrollable, fills available height */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 {/* Bio */}
                 {selectedArtist.bio && (
                   <div>
@@ -492,8 +492,8 @@ export default function ArtistMarketplace({
                 </div>
               </div>
 
-              {/* CTA */}
-              <div className="px-6 pb-6">
+              {/* CTA — always visible at the bottom, never overlapping */}
+              <div className="px-6 pb-6 pt-4 border-t border-zinc-800 bg-zinc-900 shrink-0">
                 {successIds.has(selectedArtist._id || selectedArtist.id) ? (
                   <div className="space-y-2">
                     <div className="w-full bg-emerald-500/10 border border-emerald-500/15 p-3 rounded-xl text-emerald-400 text-sm font-semibold flex items-center justify-center gap-2">

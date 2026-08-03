@@ -1,5 +1,7 @@
-const BASE_CONV = '/api/conversations';
-const BASE_MSG  = '/api/messages';
+import { API_BASE } from './config.js';
+
+const BASE_CONV = `${API_BASE}/conversations`;
+const BASE_MSG  = `${API_BASE}/messages`;
 
 // ── Conversations ─────────────────────────────────────────────────────────────
 

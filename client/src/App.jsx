@@ -5,9 +5,7 @@ import {
   Users,
   Compass,
   Sparkles,
-  PlayCircle,
   Store,
-  LogOut,
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -19,6 +17,8 @@ import { getConversations, createConversation, getMessages, markConversationRead
 
 import RoleToggle from './components/RoleToggle.jsx';
 import Header from './components/Header.jsx';
+import BottomNav from './components/BottomNav.jsx';
+import HelpModal from './components/HelpModal.jsx';
 import MoaContractModal from './components/MoaContractModal.jsx';
 import PaymentPortalModal from './components/PaymentPortalModal.jsx';
 import GigCreatorForm from './components/GigCreatorForm.jsx';
@@ -27,13 +27,13 @@ import MusicianDashboard from './components/MusicianDashboard.jsx';
 import GigMarketplace from './components/GigMarketplace.jsx';
 import ArtistMarketplace from './components/ArtistMarketplace.jsx';
 import ChatDrawer from './components/ChatDrawer.jsx';
+import OrganizerProfileModal from './components/OrganizerProfileModal.jsx';
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 // currentUser now comes from AuthContext (set by LoginPage / RegisterPage).
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Socket singleton — created once, reused across re-renders
-const SOCKET_URL = 'http://localhost:4000';
+import { SOCKET_URL } from './api/config.js';
 
 export default function App() {
   const { currentUser, login, logout } = useAuth();
@@ -70,6 +70,12 @@ export default function App() {
   // ── Payment Portal Modal ──────────────────────────────────────────────────
   const [isPaymentPortalOpen, setIsPaymentPortalOpen] = useState(false);
   const [paymentPortalContract, setPaymentPortalContract] = useState(null);
+
+  // ── Help Modal ────────────────────────────────────────────────────────────
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // ── Organizer Profile Modal ───────────────────────────────────────────────
+  const [isOrgProfileOpen, setIsOrgProfileOpen] = useState(false);
 
   // ── Initialise Socket.io ──────────────────────────────────────────────────
   useEffect(() => {
@@ -592,29 +598,18 @@ export default function App() {
         escrowTotal={escrowTotal}
         unreadMessages={unreadMessages}
         onOpenChat={handleOpenChatList}
+        onOpenHelp={() => setIsHelpOpen(true)}
+        onLogout={logout}
       />
 
-      {/* Logout button — top-right overlay */}
-      <div className="fixed top-3 right-4 z-50">
-        <button
-          id="btn-logout"
-          onClick={logout}
-          title="Log out"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/90 border border-zinc-700/60 hover:border-red-500/50 text-zinc-400 hover:text-red-400 text-xs font-semibold rounded-lg backdrop-blur-sm transition-all cursor-pointer shadow-lg"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          Logout
-        </button>
-      </div>
-
       {/* 2. Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 mb-bottom-nav md:mb-0">
 
         {/* Role Toggle */}
         <RoleToggle role={role} onChange={handleRoleSwitch} />
 
-        {/* Nav Tabs */}
-        <div id="role-dependent-tabs" className="bg-zinc-900/60 p-1.5 rounded-xl border border-zinc-800/80 flex items-center justify-between gap-4">
+        {/* Nav Tabs — desktop only; mobile uses BottomNav */}
+        <div id="role-dependent-tabs" className="hidden md:flex bg-zinc-900/60 p-1.5 rounded-xl border border-zinc-800/80 items-center justify-between gap-4">
           <div className="flex gap-1">
             {role === 'organizer' ? (
               <>
@@ -745,36 +740,15 @@ export default function App() {
           )}
         </div>
 
-        {/* Interactive Sandbox Guide */}
-        <div id="sandbox-walkthrough-panel" className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl space-y-4 shadow-xl">
-          <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-            <h4 className="font-bold text-sm text-zinc-200 flex items-center gap-2">
-              <PlayCircle className="w-4 h-4 text-violet-400" />
-              Sandbox Interactive Flow Guide
-            </h4>
-            <button
-              id="btn-refresh-data"
-              onClick={loadData}
-              className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 bg-zinc-950 border border-zinc-800 px-2.5 py-1 rounded transition-colors cursor-pointer"
-            >
-              Refresh Data
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
-            {[
-              ['01. INVITE ARTIST', 'Go to Artist Marketplace → pick a musician → Send Direct Invitation with a personal note.'],
-              ['02. OPEN CHAT', 'After inviting, click "Open Chat" to start a real-time conversation with that artist.'],
-              ['03. SWITCH TO MUSICIAN', 'Toggle role to Live Musician → Musician Dashboard → check Planner Invitations inbox.'],
-              ['04. REPLY IN INBOX', 'Open the invitation card — the chat drawer opens. Reply to the planner in real-time!'],
-              ['05. SIGN THE MoA', 'Back in Planner mode, approve the application → Draft MoA → Sign to lock escrow.'],
-            ].map(([step, desc]) => (
-              <div key={step} className="p-3 bg-zinc-950 border border-zinc-800 rounded-lg space-y-1">
-                <span className="font-mono text-violet-400 font-bold block">{step}</span>
-                <p className="text-zinc-400 leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
+        {/* Refresh Data — compact button replacing old sandbox panel */}
+        <div className="flex justify-end">
+          <button
+            id="btn-refresh-data"
+            onClick={loadData}
+            className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          >
+            Refresh Data
+          </button>
         </div>
       </main>
 
@@ -785,6 +759,21 @@ export default function App() {
         contract={draftContract}
         onSign={handleSignContract}
         role={role}
+        currentUser={currentUser}
+      />
+
+      {/* Organizer Profile Modal */}
+      <OrganizerProfileModal
+        isOpen={isOrgProfileOpen}
+        onClose={() => setIsOrgProfileOpen(false)}
+        currentUser={profile}
+        onSave={async ({ name, bio }) => {
+          // Optimistically update local profile
+          setProfile((prev) => ({ ...prev, name, bio }));
+          // Persist to server (best-effort — Phase 1 has no PUT /api/users/:id yet,
+          // so we just update local state; Phase 2 will add the endpoint)
+          setIsOrgProfileOpen(false);
+        }}
       />
 
       {/* Payment Portal Modal */}
@@ -810,10 +799,25 @@ export default function App() {
         loading={chatLoading}
       />
 
-      {/* Footer */}
-      <footer id="app-footer" className="border-t border-zinc-800 bg-zinc-950 py-5 text-center text-[10px] font-mono text-zinc-600">
+      {/* Help Modal */}
+      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+
+      {/* Bottom Navigation — mobile only */}
+      <BottomNav
+        role={role}
+        organizerTab={organizerTab}
+        musicianTab={musicianTab}
+        unreadMessages={unreadMessages}
+        onOrganizerTab={setOrganizerTab}
+        onMusicianTab={setMusicianTab}
+        onOpenChat={handleOpenChatList}
+        onOrganizerProfile={() => setIsOrgProfileOpen(true)}
+      />
+
+      {/* Footer — hidden on mobile to save space */}
+      <footer id="app-footer" className="hidden sm:block border-t border-zinc-800 bg-zinc-950 py-5 text-center text-[10px] font-mono text-zinc-600">
         <div className="max-w-7xl mx-auto px-4">
-          <span>GigBuddy Entertainment Marketplace Systems • MERN Stack • Phase 1 MVP</span>
+          <span>GigBag Entertainment Marketplace • MERN Stack • Phase 1 MVP</span>
         </div>
       </footer>
     </div>

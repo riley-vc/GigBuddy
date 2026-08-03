@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { X, Shield, FileText, CheckCircle } from 'lucide-react';
 
-export default function MoaContractModal({ isOpen, onClose, contract, onSign, role }) {
-  const [signatureText, setSignatureText] = useState('');
+export default function MoaContractModal({ isOpen, onClose, contract, onSign, role, currentUser }) {
+  const [signatureText, setSignatureText] = useState(currentUser?.name || '');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,10 +46,10 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
     role === 'organizer' ? !!contract.organizerSignature : !!contract.musicianSignature;
 
   return (
-    <div id="moa-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div id="moa-modal-overlay" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
       <div
         id="moa-modal-container"
-        className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        className="w-full sm:max-w-2xl bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
       >
         {/* Header */}
         <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
@@ -168,7 +168,7 @@ export default function MoaContractModal({ isOpen, onClose, contract, onSign, ro
                 <input
                   id="moa-signature-input"
                   type="text"
-                  placeholder="e.g. Carlo Reyes"
+                  placeholder={currentUser?.name || 'e.g. Carlo Reyes'}
                   value={signatureText}
                   onChange={(e) => setSignatureText(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 text-zinc-50 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"

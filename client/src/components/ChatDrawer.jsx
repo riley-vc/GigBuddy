@@ -215,11 +215,11 @@ export default function ChatDrawer({
         }`}
       />
 
-      {/* Drawer */}
+      {/* Drawer — full-screen on mobile, side panel on sm+ */}
       <div
-        className={`fixed top-0 right-0 z-50 h-full w-full max-w-md flex flex-col bg-zinc-950 border-l border-zinc-800 shadow-2xl transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed z-50 flex flex-col bg-zinc-950 shadow-2xl transition-transform duration-300 ease-out
+          inset-0 sm:inset-auto sm:top-0 sm:right-0 sm:h-full sm:w-full sm:max-w-md sm:border-l sm:border-zinc-800
+          ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* ══ LIST VIEW ══════════════════════════════════════════════════════ */}
         {view === 'list' && (
@@ -388,7 +388,7 @@ export default function ChatDrawer({
             </div>
 
             {/* Input Bar */}
-            <div className="px-4 py-4 border-t border-zinc-800 bg-zinc-950 shrink-0">
+            <div className="px-4 pt-4 pb-4 border-t border-zinc-800 bg-zinc-950 shrink-0 pb-safe">
               <form onSubmit={handleSend} className="flex items-end gap-2">
                 <textarea
                   ref={inputRef}
@@ -402,14 +402,14 @@ export default function ChatDrawer({
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Type a message… (Enter to send)"
-                  className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-200 text-sm rounded-xl px-3.5 py-2.5 resize-none focus:outline-none focus:border-violet-500 transition-colors placeholder:text-zinc-600 min-h-[40px]"
+                  className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2.5 resize-none focus:outline-none focus:border-violet-500 transition-colors placeholder:text-zinc-600 min-h-[44px]"
                   style={{ overflowY: 'hidden' }}
                 />
                 <button
                   id="chat-send-btn"
                   type="submit"
                   disabled={!draft.trim() || sending}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-all shadow-lg shadow-violet-600/20 shrink-0 cursor-pointer"
+                  className="w-11 h-11 flex items-center justify-center rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-all shadow-lg shadow-violet-600/20 shrink-0 cursor-pointer"
                 >
                   {sending
                     ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -417,7 +417,7 @@ export default function ChatDrawer({
                   }
                 </button>
               </form>
-              <p className="text-[10px] text-zinc-700 mt-1.5 text-center font-mono">
+              <p className="text-[10px] text-zinc-700 mt-1.5 text-center font-mono hidden sm:block">
                 Shift+Enter for new line
               </p>
             </div>
