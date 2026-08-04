@@ -66,12 +66,10 @@ export default function BottomNav({
               active={musicianTab === 'find_gigs'}
               onClick={() => onMusicianTab('find_gigs')}
             />
-            {/* Dashboard */}
-            <BottomNavItem
-              id="bnav-mus-dashboard"
-              label="Dashboard"
-              icon={<Users className="w-5 h-5" />}
+            {/* Dashboard — FAB centre button */}
+            <DashboardFab
               active={musicianTab === 'dashboard'}
+              badge={unreadMessages}
               onClick={() => onMusicianTab('dashboard')}
             />
             {/* Messages */}
@@ -114,6 +112,39 @@ function PostGigFab({ active, onClick }) {
       </button>
       <span className={`text-[10px] font-semibold tracking-tight mt-1 ${active ? 'text-fuchsia-400' : 'text-zinc-500'}`}>
         Post Gig
+      </span>
+    </div>
+  );
+}
+
+// ── Elevated circular FAB for Musician Dashboard ────────────────────────────
+function DashboardFab({ active, badge = 0, onClick }) {
+  return (
+    <div className="relative flex flex-col items-center justify-end pb-1 flex-1">
+      <button
+        id="bnav-mus-dashboard"
+        onClick={onClick}
+        className={`
+          relative -mt-5 w-14 h-14 rounded-full flex items-center justify-center
+          shadow-xl transition-all cursor-pointer
+          ring-4 ring-zinc-950
+          ${active
+            ? 'bg-violet-500 shadow-violet-500/40 scale-105'
+            : 'bg-violet-600 hover:bg-violet-500 shadow-violet-600/30 hover:scale-105 active:scale-95'
+          }
+        `}
+        aria-label="Musician Dashboard"
+      >
+        <span className="absolute inset-0 rounded-full bg-violet-500/20 blur-md pointer-events-none" />
+        <Users className="w-6 h-6 text-white relative z-10" />
+        {badge > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-white text-violet-700 text-[9px] font-bold rounded-full flex items-center justify-center shadow-lg">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </button>
+      <span className={`text-[10px] font-semibold tracking-tight mt-1 ${active ? 'text-violet-400' : 'text-zinc-500'}`}>
+        Dashboard
       </span>
     </div>
   );

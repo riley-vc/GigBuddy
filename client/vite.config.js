@@ -5,6 +5,24 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [
+    // Swallow ECONNRESET / EPIPE so Vite doesn't crash when a browser or LAN
+    // device drops a connection mid-request (Vite v8 regression).
+    {
+      name: 'suppress-socket-errors',
+      configureServer(server) {
+        server.httpServer?.on('error', (err) => {
+          if (err.code === 'ECONNRESET' || err.code === 'EPIPE') return;
+          throw err;
+        });
+        // Also guard the WebSocket upgrade server used by HMR
+        server.httpServer?.on('connection', (socket) => {
+          socket.on('error', (err) => {
+            if (err.code === 'ECONNRESET' || err.code === 'EPIPE') return;
+            throw err;
+          });
+        });
+      },
+    },
     react(),
     tailwindcss(),
     VitePWA({

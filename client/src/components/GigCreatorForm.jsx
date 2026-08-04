@@ -2,7 +2,22 @@ import { useState } from 'react';
 import { Calendar, Clock, DollarSign, MapPin, Plus, Check, Info, FilePlus2, Sparkles, ChevronRight, ChevronLeft } from 'lucide-react';
 
 const GENRE_PRESETS = ['OPM', 'Bisrock', 'P-pop', 'Kundiman', 'Jazz-OPM', 'Alternative OPM', 'Acoustic OPM', 'Indie PH', 'Electronic', 'Rock PH', 'Folk PH', 'R&B PH'];
-const INSTRUMENT_PRESETS = ['Acoustic Guitar', 'Electric Guitar', 'Bass Guitar', 'Drums', 'Vocals (Lead)', 'Keyboard', 'Piano', 'Violin', 'Alto Saxophone', 'Cajon', 'Trumpet'];
+const INSTRUMENT_PRESETS = [
+  // Vocals
+  'Lead Vocals', 'Backing Vocals / BGV', 'Choir',
+  // Guitar family
+  'Acoustic Guitar', 'Electric Guitar', 'Bass Guitar', 'Classical Guitar', 'Ukulele',
+  // Keys
+  'Keyboard / Keys', 'Piano', 'Synthesizer / Synth', 'Organ',
+  // Drums & Percussion
+  'Drum Kit', 'Cajón', 'Percussion / Congas', 'Electronic Drums',
+  // Strings
+  'Violin', 'Viola', 'Cello', 'Double Bass',
+  // Brass & Wind
+  'Trumpet', 'Saxophone', 'Flute', 'Trombone', 'French Horn',
+  // Other
+  'DJ / Turntables', 'Sound Engineer', 'Emcee / Host',
+];
 const BACKLINE_PRESETS = ['Roland FP-90 Digital Piano', 'Yamaha Stage Custom Drum Kit', 'Marshall DSL40CR Combo', 'Hartke HD75 Bass Combo', 'Bose L1 Compact PA System', 'DI Box (Radial)', 'Shure SM58 Vocal Mic', 'Shure SM137 Instrument Mic'];
 
 const STEP_LABELS = ['Event Info', 'Schedule & Budget', 'Talent Specs'];
@@ -24,9 +39,9 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
   const [description, setDescription] = useState('');
 
   // Step 3 fields
-  const [genres, setGenres] = useState(['Jazz']);
-  const [instruments, setInstruments] = useState(['Double Bass']);
-  const [backlineProvided, setBacklineProvided] = useState(['Direct Box (DI)']);
+  const [genres, setGenres] = useState([]);
+  const [instruments, setInstruments] = useState([]);
+  const [backlineProvided, setBacklineProvided] = useState([]);
   const [customGenre, setCustomGenre] = useState('');
   const [customInstrument, setCustomInstrument] = useState('');
   const [customBackline, setCustomBackline] = useState('');
@@ -102,7 +117,7 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
       setTitle(''); setVenueName(''); setDate('');
       setSoundcheckTime('18:00'); setSetTime('20:30'); setEndTime('23:00');
       setBudget(''); setDescription('');
-      setGenres(['Jazz']); setInstruments(['Double Bass']); setBacklineProvided(['Direct Box (DI)']);
+      setGenres([]); setInstruments([]); setBacklineProvided([]);
       setStep(1);
       onSuccess();
     } finally {
@@ -225,17 +240,24 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
                 {errors.venueName && <p className="text-xs text-amber-400 mt-1">{errors.venueName}</p>}
               </div>
 
-              <div>
+              <div className="w-full overflow-hidden">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Performance Date</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-zinc-500" />
+                <div className="relative w-full overflow-hidden">
+                  <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-zinc-500 pointer-events-none" />
                   <input
                     id="input-date"
                     type="date"
                     value={date}
-                    min={(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })()}
+                    min={(() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 1);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, '0');
+                      const day = String(d.getDate()).padStart(2, '0');
+                      return `${y}-${m}-${day}`;
+                    })()}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 text-zinc-50 rounded-lg py-3 pl-10 pr-3.5 focus:outline-none focus:border-violet-500 transition-colors"
+                    className="w-full min-w-0 bg-zinc-950 border border-zinc-800 text-zinc-50 rounded-lg py-3 pl-10 pr-3.5 focus:outline-none focus:border-violet-500 transition-colors"
                   />
                 </div>
                 {errors.date && <p className="text-xs text-amber-400 mt-1">{errors.date}</p>}
@@ -251,20 +273,20 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
                   <Clock className="w-3.5 h-3.5 text-violet-400" />
                   Strict Schedule Parameters
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 w-full overflow-hidden">
                   {[
                     { label: 'Soundcheck Start', val: soundcheckTime, set: setSoundcheckTime, id: 'input-soundcheck', err: 'soundcheckTime' },
                     { label: 'Performance Set', val: setTime, set: setSetTime, id: 'input-settime', err: 'setTime' },
                     { label: 'Show End / Curfew', val: endTime, set: setEndTime, id: 'input-endtime', err: 'endTime' },
                   ].map(({ label, val, set, id, err }) => (
-                    <div key={id}>
+                    <div key={id} className="flex-1 min-w-0 overflow-hidden">
                       <label className="block text-[10px] text-zinc-500 mb-1 font-mono uppercase">{label}</label>
                       <input
                         id={id}
                         type="time"
                         value={val}
                         onChange={(e) => set(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg p-2.5 focus:outline-none focus:border-violet-500 font-mono"
+                        className="w-full min-w-0 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg p-2.5 focus:outline-none focus:border-violet-500 font-mono"
                       />
                       {errors[err] && <p className="text-[10px] text-amber-400 mt-0.5">{errors[err]}</p>}
                     </div>
