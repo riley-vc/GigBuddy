@@ -85,7 +85,7 @@ export default function PaymentPortalModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
 
           {/* ══════════════════════════════════════════════════════════════════
               SCREEN A — QR Ph checkout (fully_signed)
@@ -349,18 +349,23 @@ export default function PaymentPortalModal({
                     </div>
                   )}
 
-                  {/* Dev mode override */}
-                  {!gigHasPassed && !devOverride && (
-                    <p className="text-center text-[10px] text-zinc-700">
-                      Testing?{' '}
-                      <button
-                        onClick={() => setDevOverride(true)}
-                        className="text-zinc-600 underline hover:text-zinc-400 transition-colors cursor-pointer"
-                      >
-                        Override date gate (dev only)
-                      </button>
-                    </p>
-                  )}
+
+                  {/* ── Simulate Release — always enabled for demo/testing ── */}
+                  <div className="pt-1 border-t border-zinc-800/60">
+                    <p className="text-[10px] text-zinc-600 text-center mb-2">For demo / testing purposes</p>
+                    <button
+                      id="btn-simulate-release"
+                      onClick={handleRelease}
+                      disabled={releasing}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-900/30 cursor-pointer"
+                    >
+                      {releasing ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" />Releasing…</>
+                      ) : (
+                        `Simulate Release — ₱${amount.toLocaleString()} to Artist`
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
 

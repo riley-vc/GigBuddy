@@ -8,7 +8,7 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
 
   const [isApplying, setIsApplying] = useState(false);
   const [coverNote, setCoverNote] = useState('');
-  const [chosenInstrument, setChosenInstrument] = useState(profile.primaryInstrument || '');
+  const [chosenInstruments, setChosenInstruments] = useState([]);
 
   const selectedGig = gigs.find((g) => (g.id || g._id) === selectedGigId) || null;
 
@@ -33,20 +33,23 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
   const handleApplySubmit = (e) => {
     e.preventDefault();
     if (!selectedGig) return;
+    if (chosenInstruments.length === 0) return;
     const gigId = selectedGig.id || selectedGig._id;
     onApply(
       gigId,
-      chosenInstrument,
+      chosenInstruments.join(', '),
       coverNote || `Hey! This is ${profile.name}. I'm extremely interested in your call and am fully available on the date. I'll bring top tier equipment and energy!`,
       profile.skills || []
     );
     setCoverNote('');
+    setChosenInstruments([]);
     setIsApplying(false);
   };
 
   const handleSelectGig = (gigId) => {
     setSelectedGigId(gigId);
     setIsApplying(false);
+    setChosenInstruments([]);
   };
 
   const handleBack = () => {
@@ -61,8 +64,8 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
     setIsApplying,
     coverNote,
     setCoverNote,
-    chosenInstrument,
-    setChosenInstrument,
+    chosenInstruments,
+    setChosenInstruments,
     handleApplySubmit,
     hasAlreadyApplied,
   };
@@ -257,11 +260,20 @@ function GigDetail({
   setIsApplying,
   coverNote,
   setCoverNote,
-  chosenInstrument,
-  setChosenInstrument,
+  chosenInstruments,
+  setChosenInstruments,
   handleApplySubmit,
   hasAlreadyApplied,
 }) {
+  const gigInstruments = selectedGig?.instruments?.length > 0 ? selectedGig.instruments : [];
+  const needsSelection = gigInstruments.length > 0 && chosenInstruments.length === 0;
+
+  const toggleInstrument = (inst) => {
+    setChosenInstruments((prev) =>
+      prev.includes(inst) ? prev.filter((i) => i !== inst) : [...prev, inst]
+    );
+  };
+
   if (!selectedGig) return null;
   const gigId = selectedGig.id || selectedGig._id;
   const applied = hasAlreadyApplied(gigId);
@@ -343,16 +355,46 @@ function GigDetail({
         {isApplying ? (
           <form onSubmit={handleApplySubmit} className="space-y-3.5 bg-zinc-950 p-4 rounded-xl border border-zinc-800">
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
-                Instrument for performance:
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+                Instrument(s) / Role(s) you'll fill:
               </label>
-              <input
-                id="apply-instrument-input"
-                type="text"
-                value={chosenInstrument}
-                onChange={(e) => setChosenInstrument(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 rounded p-2 focus:outline-none focus:border-violet-500"
-              />
+              {gigInstruments.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {gigInstruments.map((inst) => {
+                    const checked = chosenInstruments.includes(inst);
+                    return (
+                      <label
+                        key={inst}
+                        htmlFor={`inst-${inst}`}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors select-none ${
+                          checked
+                            ? 'bg-violet-600/15 border-violet-500/50 text-violet-300'
+                            : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors ${
+                          checked ? 'bg-violet-600 border-violet-500' : 'border-zinc-600 bg-zinc-800'
+                        }`}>
+                          {checked && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 12 12">
+                              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
+                        <input id={`inst-${inst}`} type="checkbox" className="sr-only" checked={checked} onChange={() => toggleInstrument(inst)} />
+                        <span className="text-xs font-semibold">{inst}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-500 italic">
+                  No specific instruments required — describe your role in the cover note.
+                </p>
+              )}
+              {chosenInstruments.length > 0 && (
+                <p className="text-[10px] text-violet-400 font-mono mt-2">Selected: {chosenInstruments.join(', ')}</p>
+              )}
             </div>
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
@@ -379,9 +421,15 @@ function GigDetail({
               <button
                 id="send-apply-btn"
                 type="submit"
-                className="flex-1 bg-violet-600 hover:bg-violet-500 text-zinc-50 rounded-lg py-3 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                disabled={needsSelection}
+                className={`flex-1 rounded-lg py-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                  needsSelection
+                    ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+                    : 'bg-violet-600 hover:bg-violet-500 text-zinc-50 cursor-pointer'
+                }`}
               >
-                <Send className="w-3.5 h-3.5" /> Submit Application
+                <Send className="w-3.5 h-3.5" />
+                {needsSelection ? 'Select an instrument first' : 'Submit Application'}
               </button>
             </div>
           </form>
