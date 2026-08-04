@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>GigBag — Booking musicians shouldn't feel like a gamble</title>
+  <meta name="description" content="GigBag connects event organizers with musicians and performers across the Philippines — verified profiles, real contracts, secure payment. Join the waitlist." />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <img src="favicon.svg" alt="" class="brand-mark" width="28" height="27" />
+        <span class="brand-name">GigBag</span>
+      </div>
+      <span class="badge">🚀 Launching Soon</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="glow" aria-hidden="true"></div>
+      <div class="wrap hero-inner">
+        <h1>Booking musicians shouldn't feel like a gamble.</h1>
+        <p class="lede">
+          GigBag connects event organizers with musicians and performers across the
+          Philippines — with verified profiles, real contracts, and secure payment,
+          so no one gets left hanging.
+        </p>
+        <button type="button" class="btn btn-primary btn-lg" data-cta>Get Early Access</button>
+      </div>
+    </section>
+
+    <!-- Problem -->
+    <section class="section problem">
+      <div class="wrap">
+        <h2>The gig economy runs on word of mouth. That's the problem.</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3>For Organizers</h3>
+            <ul>
+              <li>No central place to find musicians that fit your event</li>
+              <li>No way to vet talent beyond a friend's recommendation</li>
+              <li>Verbal agreements with no protection if someone doesn't show</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>For Musicians</h3>
+            <ul>
+              <li>Gig opportunities limited to your personal network</li>
+              <li>No formal way to track applications or bookings</li>
+              <li>No guarantee you'll actually get paid</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Solution -->
+    <section class="section solution">
+      <div class="wrap">
+        <h2>One platform. Both sides covered.</h2>
+        <div class="grid-4">
+          <div class="feature">
+            <div class="feature-icon">🔎</div>
+            <h3>Browse &amp; Discover</h3>
+            <p>A real directory of musicians and open gigs, searchable by genre, location, and budget.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">💬</div>
+            <h3>Chat Built In</h3>
+            <p>Coordinate details without leaving the app.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">📝</div>
+            <h3>Signed Agreements</h3>
+            <p>Simple digital contracts, so bookings are actually binding.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🔒</div>
+            <h3>Secure Payment</h3>
+            <p>Funds held in escrow, released when the gig is done.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Social proof -->
+    <section class="section proof">
+      <div class="wrap">
+        <!-- Placeholder credibility quote — swap for a real quote/stat from interviews when available -->
+        <blockquote>
+          "Built with input from indie bands, established acts, and event organizers
+          across Metro Manila."
+        </blockquote>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="section final-cta">
+      <div class="wrap">
+        <h2>Be first to know when GigBag launches.</h2>
+        <p class="lede">Join the waitlist — no spam, just an update when we're ready.</p>
+        <button type="button" class="btn btn-primary btn-lg" data-cta>Get Early Access</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span>GigBag © 2026</span>
+      <span>Philippines 🇵🇭</span>
+    </div>
+  </footer>
+
+  <!-- Email capture modal -->
+  <div class="modal-backdrop" id="waitlist-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+
+      <div id="modal-form-state">
+        <h3 id="modal-title">Get Early Access</h3>
+        <p class="modal-sub">Drop your email and we'll let you know the moment GigBag opens up.</p>
+        <form id="waitlist-form">
+          <label class="field">
+            <span>Name <em>(optional)</em></span>
+            <input type="text" name="name" id="wl-name" autocomplete="name" placeholder="Juan Dela Cruz" />
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" id="wl-email" autocomplete="email" placeholder="you@email.com" required />
+          </label>
+          <p class="form-error" id="wl-error" hidden></p>
+          <button type="submit" class="btn btn-primary btn-block" id="wl-submit">Join the Waitlist</button>
+        </form>
+      </div>
+
+      <div id="modal-success-state" hidden>
+        <h3>You're on the list 🎸</h3>
+        <p class="modal-sub">We'll email you the moment GigBag is ready. Thanks for the early interest!</p>
+        <button type="button" class="btn btn-secondary btn-block" id="wl-done">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

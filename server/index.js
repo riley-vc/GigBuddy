@@ -13,6 +13,7 @@ import contractRoutes     from './routes/contracts.js';
 import conversationRoutes from './routes/conversations.js';
 import messageRoutes      from './routes/messages.js';
 import authRoutes         from './routes/auth.js';
+import landingRoutes      from './routes/landing.js';
 
 import Message      from './models/Message.js';
 import Conversation from './models/Conversation.js';
@@ -63,6 +64,7 @@ app.use('/api/applications',  applicationRoutes);
 app.use('/api/contracts',     contractRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages',      messageRoutes);
+app.use('/api/landing',       landingRoutes);
 
 // Temporary seed endpoint since Render free tier has no shell
 app.get('/api/seed', async (req, res) => {
