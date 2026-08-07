@@ -361,7 +361,208 @@ function InviteRosterForm({ musicians, existingIds, onInvite, onCancel }) {
 }
 
 // ─── Single band detail (roster + manage) ──────────────────────────────────
-function BandDetail({ team, profile, musicians, onBack, onInviteToRoster, onRemoveMember, onSetPayoutManager }) {
+// ─── Payout split card for a single band-booked contract ───────────────────
+function PayoutSplitCard({ contract, profile, musicians, onConfigureSplits, onRespondSplit }) {
+  const payoutSplits = contract.payoutSplits || [];
+  const hasConfigured = payoutSplits.some((s) => s.rawValue > 0);
+  const [editing, setEditing] = useState(!hasConfigured);
+  const [method, setMethod] = useState(hasConfigured ? payoutSplits[0].method : 'percentage');
+  const [mode, setMode] = useState(contract.payoutMode || 'lump_sum');
+  const [inputs, setInputs] = useState(() => {
+    const init = {};
+    payoutSplits.forEach((s) => {
+      const sid = (s.musicianId?._id || s.musicianId || '').toString();
+      init[sid] = hasConfigured ? String(s.rawValue) : '';
+    });
+    return init;
+  });
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [responding, setResponding] = useState(false);
+
+  const myId = (profile._id || '').toString();
+  const managerId = (contract.musicianId?._id || contract.musicianId || '').toString();
+  const isPointOfContact = managerId === myId;
+  const mySplit = payoutSplits.find((s) => (s.musicianId?._id || s.musicianId || '').toString() === myId);
+  const totalSplits = payoutSplits.length;
+  const approvedCount = payoutSplits.filter((s) => s.status === 'approved').length;
+  const locked = contract.status !== 'pending_signatures';
+
+  const getMusicianInfo = (id) => {
+    const idStr = (id?._id || id || '').toString();
+    return musicians.find((m) => (m._id || m.id)?.toString() === idStr) || { name: id?.name || 'Musician' };
+  };
+
+  const handleSave = async () => {
+    setError('');
+    const splits = payoutSplits.map((s) => {
+      const sid = (s.musicianId?._id || s.musicianId || '').toString();
+      return { musicianId: sid, rawValue: Number(inputs[sid] || 0) };
+    });
+    const sum = splits.reduce((acc, s) => acc + s.rawValue, 0);
+    const expected = method === 'percentage' ? 100 : contract.compensation;
+    if (sum !== expected) {
+      const target = method === 'percentage' ? '100' : `₱${contract.compensation?.toLocaleString()}`;
+      const got = method === 'percentage' ? sum : `₱${sum.toLocaleString()}`;
+      setError(`${method === 'percentage' ? 'Percentages' : 'Amounts'} must add up to ${target} — currently ${got}`);
+      return;
+    }
+    setSaving(true);
+    const updated = await onConfigureSplits(contract._id, { method, splits, payoutMode: mode });
+    setSaving(false);
+    if (updated) setEditing(false);
+  };
+
+  const handleRespond = async (status) => {
+    setResponding(true);
+    await onRespondSplit(contract._id, myId, status);
+    setResponding(false);
+  };
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-zinc-50 truncate">{contract.gigTitle}</p>
+          <p className="text-[11px] text-zinc-500">{contract.venueName} · ₱{contract.compensation?.toLocaleString()}</p>
+        </div>
+        {locked && (
+          <span className="text-[9px] font-mono text-zinc-500 bg-zinc-950 border border-zinc-800 px-1.5 py-0.5 rounded uppercase shrink-0">Locked</span>
+        )}
+      </div>
+
+      {isPointOfContact && editing && !locked ? (
+        <div className="space-y-2.5">
+          <div className="flex gap-2">
+            {['lump_sum', 'per_member'].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
+                  mode === m ? 'bg-violet-600 border-violet-600 text-zinc-50' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {m === 'lump_sum' ? 'Lump Sum to You' : 'Per-Member Split'}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            {['percentage', 'fixed'].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMethod(m)}
+                className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
+                  method === m ? 'bg-zinc-800 border-zinc-700 text-zinc-50' : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {m === 'percentage' ? 'By Percentage' : 'By Fixed ₱'}
+              </button>
+            ))}
+          </div>
+          <div className="space-y-2">
+            {payoutSplits.map((s) => {
+              const sid = (s.musicianId?._id || s.musicianId || '').toString();
+              const info = getMusicianInfo(s.musicianId);
+              return (
+                <div key={sid} className="flex items-center gap-2.5">
+                  <span className="text-xs text-zinc-300 flex-1 min-w-0 truncate">{info.name}{sid === myId ? ' (You)' : ''}</span>
+                  <div className="relative shrink-0 w-24">
+                    {method === 'fixed' && (
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500">₱</span>
+                    )}
+                    <input
+                      id={`band-split-input-${contract._id}-${sid}`}
+                      type="number"
+                      min="0"
+                      value={inputs[sid] || ''}
+                      onChange={(e) => setInputs((prev) => ({ ...prev, [sid]: e.target.value }))}
+                      className={`w-full bg-zinc-950 border border-zinc-800 text-zinc-50 rounded-lg py-1.5 text-xs text-right focus:outline-none focus:border-violet-500 ${method === 'fixed' ? 'pl-5 pr-2' : 'pl-2 pr-5'}`}
+                    />
+                    {method === 'percentage' && (
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500">%</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {error && <p className="text-[11px] text-amber-400 bg-amber-500/5 px-3 py-1.5 rounded border border-amber-500/10">{error}</p>}
+          <button
+            id={`save-band-split-${contract._id}`}
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-zinc-50 rounded-lg py-2 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            {saving ? 'Saving...' : 'Save Split'}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {payoutSplits.map((s) => {
+            const sid = (s.musicianId?._id || s.musicianId || '').toString();
+            const info = getMusicianInfo(s.musicianId);
+            return (
+              <div key={sid} className="flex items-center justify-between gap-2 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
+                <span className="text-xs text-zinc-200 truncate">{info.name}{sid === myId ? ' (You)' : ''}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-mono text-emerald-400">₱{s.amount?.toLocaleString()}</span>
+                  {s.status === 'approved' && (
+                    <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase">✓ Approved</span>
+                  )}
+                  {s.status === 'declined' && (
+                    <span className="text-[9px] font-mono text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded uppercase">✗ Declined</span>
+                  )}
+                  {s.status === 'pending' && (
+                    <span className="text-[9px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase">Pending</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-[10px] text-zinc-500">{approvedCount} of {totalSplits} member{totalSplits === 1 ? '' : 's'} approved</p>
+          {isPointOfContact && !locked && (
+            <button
+              id={`edit-band-split-${contract._id}`}
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-[11px] text-violet-400 hover:text-violet-300 font-semibold cursor-pointer"
+            >
+              Edit Split
+            </button>
+          )}
+        </div>
+      )}
+
+      {!isPointOfContact && mySplit && mySplit.status === 'pending' && !locked && (
+        <div className="border-t border-zinc-800 pt-3 flex gap-2">
+          <button
+            id={`decline-band-split-${contract._id}`}
+            type="button"
+            onClick={() => handleRespond('declined')}
+            disabled={responding}
+            className="flex-1 bg-zinc-950 border border-zinc-800 text-zinc-300 rounded-lg py-2 text-xs font-semibold cursor-pointer disabled:opacity-50"
+          >
+            Decline
+          </button>
+          <button
+            id={`approve-band-split-${contract._id}`}
+            type="button"
+            onClick={() => handleRespond('approved')}
+            disabled={responding}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-zinc-50 rounded-lg py-2 text-xs font-semibold cursor-pointer disabled:opacity-50"
+          >
+            Approve Share
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BandDetail({ team, profile, musicians, contracts = [], onBack, onInviteToRoster, onRemoveMember, onSetPayoutManager, onConfigureSplits, onRespondSplit }) {
   const [roster, setRoster] = useState(team.roster || []);
   const [showInvite, setShowInvite] = useState(false);
   const [loading, setLoading] = useState(!team.roster);
@@ -386,6 +587,12 @@ function BandDetail({ team, profile, musicians, onBack, onInviteToRoster, onRemo
   const isManager = myRow?.role === 'manager';
   const isPayoutManager = payoutManagerId === profile._id?.toString();
   const existingIds = new Set(roster.map((m) => (m.musicianId?._id || m.musicianId)?.toString()));
+
+  // Gigs actually booked under this band — each gets its own payout-split
+  // card so the point of contact can configure it and members can approve.
+  const bandContracts = contracts.filter(
+    (c) => (c.teamId?._id || c.teamId)?.toString() === team._id?.toString()
+  );
 
   const handleRemove = async (teamMemberId) => {
     await onRemoveMember(teamMemberId);
@@ -503,6 +710,27 @@ function BandDetail({ team, profile, musicians, onBack, onInviteToRoster, onRemo
             />
           )}
         </div>
+
+        {bandContracts.length > 0 && (
+          <div>
+            <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 mb-1">Payout Splits</h4>
+            <p className="text-[11px] text-zinc-600 mb-2">
+              Configure how each booked gig's fee is divided, and each member reviews and approves their own share.
+            </p>
+            <div className="space-y-3">
+              {bandContracts.map((c) => (
+                <PayoutSplitCard
+                  key={c._id || c.id}
+                  contract={c}
+                  profile={profile}
+                  musicians={musicians}
+                  onConfigureSplits={onConfigureSplits}
+                  onRespondSplit={onRespondSplit}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -675,6 +903,7 @@ export default function BandPage({
   mySessionBands,
   musicians,
   myGigs,
+  contracts = [],
   pendingTeamInvites = [],
   completedEventsCount = 0,
   onSaveProfile,
@@ -682,6 +911,8 @@ export default function BandPage({
   onInviteToRoster,
   onRemoveTeamMember,
   onSetPayoutManager,
+  onConfigureSplits,
+  onRespondSplit,
   onCreateSessionBand,
   onRespondSessionBandInvite,
   onRemoveSessionBandMember,
@@ -697,10 +928,13 @@ export default function BandPage({
         team={detailTeam}
         profile={profile}
         musicians={musicians}
+        contracts={contracts}
         onBack={() => setDetailTeam(null)}
         onInviteToRoster={(musicianId, instrument) => onInviteToRoster(detailTeam._id, musicianId, instrument)}
         onRemoveMember={onRemoveTeamMember}
         onSetPayoutManager={onSetPayoutManager}
+        onConfigureSplits={onConfigureSplits}
+        onRespondSplit={onRespondSplit}
       />
     );
   }

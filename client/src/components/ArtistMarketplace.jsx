@@ -900,22 +900,6 @@ export default function ArtistMarketplace({
         </div>
       </div>
 
-      {/* Invite Modal — musician invite, used by the solo-artist detail AND
-          the roster-member profile popup below, so it lives at the root
-          instead of nested inside the 'solo' viewMode branch */}
-      {inviteTarget && (
-        <InviteModal
-          musician={inviteTarget}
-          openGigs={openGigs}
-          existingApplications={applications}
-          onSend={handleSendInvite}
-          onClose={() => setInviteTarget(null)}
-          contracts={contracts}
-          gigsById={gigsById}
-          conflictMusicianId={inviteTarget._id || inviteTarget.id}
-        />
-      )}
-
       {/* Team Invite Modal — reuses InviteModal, tagged as a Band instead of a Musician */}
       {teamInviteTarget && (
         <InviteModal
@@ -1049,6 +1033,22 @@ export default function ArtistMarketplace({
         </div>
       )}
       </>
+      )}
+
+      {/* Invite Modal — musician invite, used by the solo-artist detail AND
+          the roster-member profile popup, so it lives outside the viewMode
+          ternary entirely (it needs to mount from either branch) */}
+      {inviteTarget && (
+        <InviteModal
+          musician={inviteTarget}
+          openGigs={openGigs}
+          existingApplications={applications}
+          onSend={handleSendInvite}
+          onClose={() => setInviteTarget(null)}
+          contracts={contracts}
+          gigsById={gigsById}
+          conflictMusicianId={inviteTarget._id || inviteTarget.id}
+        />
       )}
     </div>
   );

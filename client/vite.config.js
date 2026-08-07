@@ -116,6 +116,15 @@ export default defineConfig({
         target: 'http://localhost:4000',
         changeOrigin: true,
       },
+      // Socket.io client connects to SOCKET_URL='' in dev (same-origin,
+      // i.e. :5173) — without this, the WebSocket handshake has nowhere to
+      // go on the Vite server and every connection attempt fails silently,
+      // which is why chat sends never actually reached anyone.
+      '/socket.io': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 });

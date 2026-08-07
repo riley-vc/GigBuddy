@@ -716,8 +716,38 @@ export default function App() {
     }
   };
 
-  // Manager configures the band's payout split (fixed ₱ or % per member)
+  // Manager configures the band's payout split (fixed ₱ or % per member).
+  // Before the first signature, the contract only exists as a local draft
+  // (no _id yet — see handleApproveApplication) — there's no DB row to PATCH,
+  // so mirror the server's amount math locally and merge it into the draft.
+  // It's persisted for real once createContract() fires at sign time.
   const handleConfigurePayoutSplits = async (contractId, payload) => {
+    if (!contractId) {
+      const { method, splits, payoutMode } = payload;
+      const compensation = draftContract.compensation || 0;
+      const amounts = method === 'fixed'
+        ? splits.map((s) => Number(s.rawValue || 0))
+        : (() => {
+            const pct = splits.map((s) => Math.floor((compensation * Number(s.rawValue || 0)) / 100));
+            const remainder = compensation - pct.reduce((a, b) => a + b, 0);
+            pct[pct.length - 1] += remainder;
+            return pct;
+          })();
+      const managerId = (draftContract.musicianId || '').toString();
+      const updated = {
+        ...draftContract,
+        payoutMode: payoutMode || draftContract.payoutMode || 'per_member',
+        payoutSplits: splits.map((s, i) => ({
+          musicianId: s.musicianId,
+          amount: amounts[i],
+          method,
+          rawValue: Number(s.rawValue || 0),
+          status: s.musicianId?.toString() === managerId ? 'approved' : 'pending',
+        })),
+      };
+      setDraftContract(updated);
+      return updated;
+    }
     try {
       const updated = await configurePayoutSplits(contractId, payload);
       setDraftContract(updated);
@@ -864,6 +894,15 @@ export default function App() {
   // anyone signs — the "dispute" mechanism is just that nothing's locked in
   // until both sides are happy enough to sign.
   const handleUpdateEscrowTerms = async (contractId, terms) => {
+    // Before the first signature the contract is only a local draft (no _id
+    // yet — see handleApproveApplication), so there's no DB row to PATCH.
+    // Just merge into the draft; it's sent along once createContract() fires
+    // at sign time.
+    if (!contractId) {
+      const updated = { ...draftContract, ...terms };
+      setDraftContract(updated);
+      return updated;
+    }
     try {
       const updated = await updateEscrowTerms(contractId, terms);
       syncContractEverywhere(updated);
@@ -1225,6 +1264,7 @@ export default function App() {
                 mySessionBands={sessionBands}
                 musicians={musicians}
                 myGigs={myGigs}
+                contracts={contracts}
                 pendingTeamInvites={pendingTeamInvites}
                 completedEventsCount={completedEventsCount}
                 onSaveProfile={handleSaveProfile}
@@ -1232,6 +1272,8 @@ export default function App() {
                 onInviteToRoster={handleInviteToRoster}
                 onRemoveTeamMember={handleRemoveTeamMember}
                 onSetPayoutManager={handleSetPayoutManager}
+                onConfigureSplits={handleConfigurePayoutSplits}
+                onRespondSplit={handleRespondToPayoutSplit}
                 onCreateSessionBand={handleCreateSessionBandOnly}
                 onRespondSessionBandInvite={handleRespondSessionBandInvite}
                 onRemoveSessionBandMember={handleRemoveSessionBandMemberAction}
