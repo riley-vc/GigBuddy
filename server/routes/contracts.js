@@ -146,6 +146,7 @@ router.post('/', async (req, res) => {
       sessionBandId,
       payoutMode,
       participants, // [{ musicianId }] — who's being paid out of this contract
+      payoutSplits: preConfiguredSplits, // optional — pre-configured splits from a local draft (see BandPage / MoaContractModal)
     } = req.body;
 
     // Block double-booking before any side effects — a rejected booking
@@ -161,6 +162,24 @@ router.post('/', async (req, res) => {
         success: false,
         error: `${musician?.name || 'This artist'} is already booked for "${conflict.contract.gigTitle}" during an overlapping time slot.`,
       });
+    }
+
+    // Band/session-band booking: if the manager is the one signing (as
+    // opposed to just drafting), every other member must have already
+    // approved their share — mirrors the same check in PATCH /:id/sign,
+    // needed here too since the manager's FIRST signature can go through
+    // this route (contract doesn't exist yet to PATCH). Checks the
+    // pre-configured splits if any were sent along; with none configured
+    // yet there's nothing to have been approved, so it blocks too.
+    if (musicianSignature && (teamId || sessionBandId) && participants?.length > 0) {
+      const splitsToCheck = preConfiguredSplits?.length > 0 ? preConfiguredSplits : participants;
+      const unresolved = splitsToCheck.filter((s) => (s.status || 'pending') !== 'approved');
+      if (unresolved.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: `Waiting on ${unresolved.length} of ${splitsToCheck.length} member${splitsToCheck.length === 1 ? '' : 's'} to approve their share before this can be signed`,
+        });
+      }
     }
 
     // Update the application status to 'approved'
@@ -190,16 +209,26 @@ router.post('/', async (req, res) => {
       ...((teamId || sessionBandId) && {
         ...(teamId ? { teamId } : { sessionBandId }),
         payoutMode: payoutMode || 'lump_sum',
-        // amount/method/rawValue default to 0/'fixed'/0 until the manager
-        // configures real numbers via PATCH /:id/payout-splits — the row
-        // existing at all is what each participant approves or declines
-        payoutSplits: (participants || []).map((p) => ({
-          musicianId: p.musicianId,
-          amount: 0,
-          method: 'fixed',
-          rawValue: 0,
-          status: 'pending',
-        })),
+        // If the manager already configured real numbers on the local draft
+        // (before this first signature creates the row), use those. Otherwise
+        // amount/method/rawValue default to 0/'fixed'/0 until configured via
+        // PATCH /:id/payout-splits — the row existing at all is what each
+        // participant approves or declines.
+        payoutSplits: preConfiguredSplits?.length > 0
+          ? preConfiguredSplits.map((s) => ({
+              musicianId: s.musicianId,
+              amount: s.amount || 0,
+              method: s.method || 'fixed',
+              rawValue: s.rawValue || 0,
+              status: s.status || 'pending',
+            }))
+          : (participants || []).map((p) => ({
+              musicianId: p.musicianId,
+              amount: 0,
+              method: 'fixed',
+              rawValue: 0,
+              status: 'pending',
+            })),
       }),
     });
 

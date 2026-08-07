@@ -575,6 +575,15 @@ export default function App() {
     await refreshMyTeams();
   };
 
+  // The band's default payout mode (lump sum to the point of contact, or
+  // split per member) — seeds payoutMode on every new contract booked under
+  // this band; can still be overridden per-contract before signing.
+  const handleSetPayoutMode = async (teamId, mode) => {
+    const updated = await updateTeam(teamId, { defaultPayoutMode: mode });
+    await refreshMyTeams();
+    return updated;
+  };
+
   const handleRespondTeamInvite = async (inviteId, status) => {
     await updateTeamInviteStatus(inviteId, status);
     setPendingTeamInvites((prev) => prev.filter((inv) => inv._id !== inviteId));
@@ -1272,6 +1281,7 @@ export default function App() {
                 onInviteToRoster={handleInviteToRoster}
                 onRemoveTeamMember={handleRemoveTeamMember}
                 onSetPayoutManager={handleSetPayoutManager}
+                onSetPayoutMode={handleSetPayoutMode}
                 onConfigureSplits={handleConfigurePayoutSplits}
                 onRespondSplit={handleRespondToPayoutSplit}
                 onCreateSessionBand={handleCreateSessionBandOnly}

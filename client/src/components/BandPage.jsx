@@ -562,7 +562,7 @@ function PayoutSplitCard({ contract, profile, musicians, onConfigureSplits, onRe
   );
 }
 
-function BandDetail({ team, profile, musicians, contracts = [], onBack, onInviteToRoster, onRemoveMember, onSetPayoutManager, onConfigureSplits, onRespondSplit }) {
+function BandDetail({ team, profile, musicians, contracts = [], onBack, onInviteToRoster, onRemoveMember, onSetPayoutManager, onSetPayoutMode, onConfigureSplits, onRespondSplit }) {
   const [roster, setRoster] = useState(team.roster || []);
   const [showInvite, setShowInvite] = useState(false);
   const [loading, setLoading] = useState(!team.roster);
@@ -570,6 +570,8 @@ function BandDetail({ team, profile, musicians, contracts = [], onBack, onInvite
     (team.defaultPayoutManagerId?._id || team.defaultPayoutManagerId || '').toString()
   );
   const [reassigningId, setReassigningId] = useState(null);
+  const [payoutMode, setPayoutMode] = useState(team.defaultPayoutMode || 'lump_sum');
+  const [savingPayoutMode, setSavingPayoutMode] = useState(false);
 
   useEffect(() => {
     if (team.roster) { setRoster(team.roster); setLoading(false); return; }
@@ -578,6 +580,7 @@ function BandDetail({ team, profile, musicians, contracts = [], onBack, onInvite
       if (cancelled) return;
       setRoster(full.roster || []);
       setPayoutManagerId((full.defaultPayoutManagerId?._id || full.defaultPayoutManagerId || '').toString());
+      setPayoutMode(full.defaultPayoutMode || 'lump_sum');
       setLoading(false);
     });
     return () => { cancelled = true; };
@@ -606,6 +609,17 @@ function BandDetail({ team, profile, musicians, contracts = [], onBack, onInvite
       setPayoutManagerId(musicianId);
     } finally {
       setReassigningId(null);
+    }
+  };
+
+  const handleSetPayoutModeClick = async (mode) => {
+    if (mode === payoutMode || savingPayoutMode) return;
+    setSavingPayoutMode(true);
+    try {
+      await onSetPayoutMode(team._id, mode);
+      setPayoutMode(mode);
+    } finally {
+      setSavingPayoutMode(false);
     }
   };
 
@@ -643,6 +657,51 @@ function BandDetail({ team, profile, musicians, contracts = [], onBack, onInvite
           <p className="text-[11px] text-zinc-600 mb-2">
             The payout manager configures how a gig's payment gets split and can hand the role to another member.
           </p>
+
+          {isPayoutManager ? (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 mb-3 space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Default Payout Mode</span>
+              </div>
+              <p className="text-[11px] text-zinc-600">
+                Starting mode for new bookings under this band — still adjustable per gig before signing.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  id="band-payout-mode-lump-sum"
+                  type="button"
+                  onClick={() => handleSetPayoutModeClick('lump_sum')}
+                  disabled={savingPayoutMode}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
+                    payoutMode === 'lump_sum'
+                      ? 'bg-violet-600 border-violet-600 text-zinc-50'
+                      : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  Lump Sum to You
+                </button>
+                <button
+                  id="band-payout-mode-per-member"
+                  type="button"
+                  onClick={() => handleSetPayoutModeClick('per_member')}
+                  disabled={savingPayoutMode}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
+                    payoutMode === 'per_member'
+                      ? 'bg-violet-600 border-violet-600 text-zinc-50'
+                      : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  Per-Member Split
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[11px] text-zinc-500 mb-3 flex items-center gap-1.5">
+              <Wallet className="w-3 h-3 text-zinc-600 shrink-0" />
+              Default payout: <span className="text-zinc-300 font-medium">{payoutMode === 'lump_sum' ? 'Lump sum to point of contact' : 'Split per member'}</span>
+            </p>
+          )}
 
           {loading ? (
             <p className="text-xs text-zinc-600">Loading roster...</p>
@@ -911,6 +970,7 @@ export default function BandPage({
   onInviteToRoster,
   onRemoveTeamMember,
   onSetPayoutManager,
+  onSetPayoutMode,
   onConfigureSplits,
   onRespondSplit,
   onCreateSessionBand,
@@ -933,6 +993,7 @@ export default function BandPage({
         onInviteToRoster={(musicianId, instrument) => onInviteToRoster(detailTeam._id, musicianId, instrument)}
         onRemoveMember={onRemoveTeamMember}
         onSetPayoutManager={onSetPayoutManager}
+        onSetPayoutMode={onSetPayoutMode}
         onConfigureSplits={onConfigureSplits}
         onRespondSplit={onRespondSplit}
       />
