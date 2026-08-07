@@ -14,9 +14,18 @@ import conversationRoutes from './routes/conversations.js';
 import messageRoutes      from './routes/messages.js';
 import authRoutes         from './routes/auth.js';
 import landingRoutes      from './routes/landing.js';
+import teamRoutes         from './routes/teams.js';
+import teamMemberRoutes   from './routes/teamMembers.js';
+import teamInviteRoutes   from './routes/teamInvites.js';
+import sessionSlotRoutes  from './routes/sessionSlots.js';
+import directConversationRoutes from './routes/directConversations.js';
+import sessionBandRoutes  from './routes/sessionBands.js';
+import recommendationRoutes from './routes/recommendations.js';
+import reviewRoutes from './routes/reviews.js';
 
-import Message      from './models/Message.js';
-import Conversation from './models/Conversation.js';
+import Message           from './models/Message.js';
+import Conversation      from './models/Conversation.js';
+import DirectConversation from './models/DirectConversation.js';
 
 import { runSeed } from './seed.js';
 
@@ -65,6 +74,14 @@ app.use('/api/contracts',     contractRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages',      messageRoutes);
 app.use('/api/landing',       landingRoutes);
+app.use('/api/teams',         teamRoutes);
+app.use('/api/team-members',  teamMemberRoutes);
+app.use('/api/team-invites',  teamInviteRoutes);
+app.use('/api/session-slots', sessionSlotRoutes);
+app.use('/api/direct-conversations', directConversationRoutes);
+app.use('/api/session-bands', sessionBandRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Temporary seed endpoint since Render free tier has no shell
 app.get('/api/seed', async (req, res) => {
@@ -109,13 +126,14 @@ io.on('connection', (socket) => {
   });
 
   // ── Send a message ─────────────────────────────────────────────────────────
-  // Payload: { conversationId, senderId, senderRole, senderName, content }
+  // Payload: { conversationId, senderId, senderRole, senderName, content, contextType }
+  // contextType: 'gig' (default, Conversation) | 'direct' (DirectConversation)
   socket.on('chat:send', async (payload, ack) => {
     try {
-      const { conversationId, senderId, senderRole, senderName, content } = payload;
+      const { conversationId, senderId, senderRole, senderName, content, contextType = 'gig' } = payload;
       if (!content?.trim()) return;
 
-      // Persist to DB
+      // Persist to DB — Message is generic (plain ObjectId ref), works for both
       const message = new Message({
         conversationId,
         senderId,
@@ -125,13 +143,26 @@ io.on('connection', (socket) => {
       });
       await message.save();
 
-      // Update conversation preview + increment unread for the OTHER party
-      const unreadField = senderRole === 'organizer' ? 'unreadMusician' : 'unreadOrganizer';
-      await Conversation.findByIdAndUpdate(conversationId, {
-        lastMessage:   content.trim(),
-        lastMessageAt: message.sentAt,
-        $inc: { [unreadField]: 1 },
-      });
+      if (contextType === 'direct') {
+        const convo = await DirectConversation.findById(conversationId);
+        if (convo) {
+          const senderIsA = convo.musicianAId.toString() === senderId?.toString();
+          const unreadField = senderIsA ? 'unreadB' : 'unreadA';
+          await DirectConversation.findByIdAndUpdate(conversationId, {
+            lastMessage:   content.trim(),
+            lastMessageAt: message.sentAt,
+            $inc: { [unreadField]: 1 },
+          });
+        }
+      } else {
+        // Update conversation preview + increment unread for the OTHER party
+        const unreadField = senderRole === 'organizer' ? 'unreadMusician' : 'unreadOrganizer';
+        await Conversation.findByIdAndUpdate(conversationId, {
+          lastMessage:   content.trim(),
+          lastMessageAt: message.sentAt,
+          $inc: { [unreadField]: 1 },
+        });
+      }
 
       // Broadcast to everyone in the room (including sender for confirmation)
       io.to(conversationId).emit('chat:receive', message);
@@ -147,11 +178,19 @@ io.on('connection', (socket) => {
   });
 
   // ── Mark conversation as read ─────────────────────────────────────────────
-  // Payload: { conversationId, role }
-  socket.on('chat:read', async ({ conversationId, role }) => {
+  // Payload: { conversationId, role, contextType, musicianId }
+  socket.on('chat:read', async ({ conversationId, role, contextType = 'gig', musicianId }) => {
     try {
-      const update = role === 'organizer' ? { unreadOrganizer: 0 } : { unreadMusician: 0 };
-      await Conversation.findByIdAndUpdate(conversationId, update);
+      if (contextType === 'direct') {
+        const convo = await DirectConversation.findById(conversationId);
+        if (convo) {
+          const isA = convo.musicianAId.toString() === musicianId?.toString();
+          await DirectConversation.findByIdAndUpdate(conversationId, isA ? { unreadA: 0 } : { unreadB: 0 });
+        }
+      } else {
+        const update = role === 'organizer' ? { unreadOrganizer: 0 } : { unreadMusician: 0 };
+        await Conversation.findByIdAndUpdate(conversationId, update);
+      }
       // Notify room so both sides can update badge counts
       io.to(conversationId).emit('conversation:updated', { conversationId });
     } catch (err) {

@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { MapPin, Calendar, Clock, Search, Music, ListFilter, Send, Check, X, ChevronLeft } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { MapPin, Calendar, Clock, Search, Music, ListFilter, Send, Check, X, ChevronLeft, AlertTriangle } from 'lucide-react';
+import PremiumBadge from './PremiumBadge.jsx';
+import RatingBadge from './RatingBadge.jsx';
+import { findConflictingContract } from '../utils/booking.js';
 
-export default function GigMarketplace({ gigs, applications, profile, onApply }) {
+export default function GigMarketplace({ gigs, applications, contracts = [], profile, myCreatedTeams = [], onApply, initialFocusGigId }) {
   const [selectedGigId, setSelectedGigId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('All');
@@ -9,6 +12,7 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
   const [isApplying, setIsApplying] = useState(false);
   const [coverNote, setCoverNote] = useState('');
   const [chosenInstruments, setChosenInstruments] = useState([]);
+  const [applyAsTeamId, setApplyAsTeamId] = useState('solo'); // 'solo' | a team _id
 
   const selectedGig = gigs.find((g) => (g.id || g._id) === selectedGigId) || null;
 
@@ -35,14 +39,18 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
     if (!selectedGig) return;
     if (chosenInstruments.length === 0) return;
     const gigId = selectedGig.id || selectedGig._id;
+    const applyAsTeam = applyAsTeamId !== 'solo' ? myCreatedTeams.find((t) => t._id === applyAsTeamId) : null;
+    const applicantName = applyAsTeam ? applyAsTeam.name : profile.name;
     onApply(
       gigId,
       chosenInstruments.join(', '),
-      coverNote || `Hey! This is ${profile.name}. I'm extremely interested in your call and am fully available on the date. I'll bring top tier equipment and energy!`,
-      profile.skills || []
+      coverNote || `Hey! This is ${applicantName}. I'm extremely interested in your call and am fully available on the date. I'll bring top tier equipment and energy!`,
+      profile.skills || [],
+      applyAsTeam
     );
     setCoverNote('');
     setChosenInstruments([]);
+    setApplyAsTeamId('solo');
     setIsApplying(false);
   };
 
@@ -50,12 +58,29 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
     setSelectedGigId(gigId);
     setIsApplying(false);
     setChosenInstruments([]);
+    setApplyAsTeamId('solo');
   };
+
+  // Deep-link support: auto-open a gig when arriving via a "View Gig"
+  // recommendation link. Guarded so it only fires once per id.
+  const consumedFocusRef = useRef(null);
+  useEffect(() => {
+    if (initialFocusGigId && consumedFocusRef.current !== initialFocusGigId) {
+      consumedFocusRef.current = initialFocusGigId;
+      handleSelectGig(initialFocusGigId);
+    }
+  }, [initialFocusGigId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBack = () => {
     setSelectedGigId(null);
     setIsApplying(false);
   };
+
+  // Own-schedule double-booking check — does applying to this gig conflict
+  // with a gig the musician is already contracted for?
+  const gigsById = {};
+  gigs.forEach((g) => { gigsById[(g._id || g.id)?.toString()] = g; });
+  const conflict = selectedGig ? findConflictingContract(selectedGig, profile._id, contracts, gigsById) : null;
 
   // ── Shared props for GigDetail (defined outside — see bottom of file) ─────────
   const gigDetailProps = {
@@ -68,6 +93,11 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
     setChosenInstruments,
     handleApplySubmit,
     hasAlreadyApplied,
+    myCreatedTeams,
+    applyAsTeamId,
+    setApplyAsTeamId,
+    profile,
+    conflict,
   };
 
   return (
@@ -132,6 +162,7 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
                   </span>
                   <span className="font-mono font-bold text-emerald-400 text-sm">₱{gig.budget?.toLocaleString()}</span>
                 </div>
+                {gig.isPromoted && <PremiumBadge className="mb-2" />}
                 <h4 className="font-bold text-zinc-50 text-sm leading-snug mb-2">{gig.title}</h4>
                 <p className="text-xs text-zinc-400 flex items-center gap-1 font-mono">
                   <MapPin className="w-3 h-3 text-zinc-500 shrink-0" />
@@ -218,6 +249,7 @@ export default function GigMarketplace({ gigs, applications, profile, onApply })
                     </span>
                     <span className="font-mono font-bold text-emerald-400 text-xs">₱{gig.budget?.toLocaleString()}</span>
                   </div>
+                  {gig.isPromoted && <PremiumBadge className="mb-2" />}
                   <h4 className="font-bold text-zinc-50 text-sm line-clamp-1 leading-snug">{gig.title}</h4>
                   <p className="text-xs text-zinc-400 flex items-center gap-1 mt-2.5 font-mono">
                     <MapPin className="w-3 h-3 text-zinc-500 shrink-0" />
@@ -264,6 +296,11 @@ function GigDetail({
   setChosenInstruments,
   handleApplySubmit,
   hasAlreadyApplied,
+  myCreatedTeams,
+  applyAsTeamId,
+  setApplyAsTeamId,
+  profile,
+  conflict,
 }) {
   const gigInstruments = selectedGig?.instruments?.length > 0 ? selectedGig.instruments : [];
   const needsSelection = gigInstruments.length > 0 && chosenInstruments.length === 0;
@@ -290,6 +327,11 @@ function GigDetail({
             </span>
           </div>
           <h3 className="font-extrabold text-zinc-50 text-lg leading-snug">{selectedGig.title}</h3>
+          {selectedGig.organizerRating != null && (
+            <p className="text-[11px] text-zinc-500 flex items-center gap-1.5">
+              Organizer rating: <RatingBadge rating={selectedGig.organizerRating} count={selectedGig.organizerRatingCount} />
+            </p>
+          )}
         </div>
 
         {/* Logistics Badges */}
@@ -354,6 +396,42 @@ function GigDetail({
       <div className="pt-4 border-t border-zinc-800 shrink-0">
         {isApplying ? (
           <form onSubmit={handleApplySubmit} className="space-y-3.5 bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+            {myCreatedTeams.length > 0 && (
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+                  Applying as:
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    id="apply-as-solo"
+                    type="button"
+                    onClick={() => setApplyAsTeamId('solo')}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                      applyAsTeamId === 'solo'
+                        ? 'bg-violet-600 border-violet-600 text-zinc-50'
+                        : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'
+                    }`}
+                  >
+                    {profile.name} (Solo)
+                  </button>
+                  {myCreatedTeams.map((team) => (
+                    <button
+                      id={`apply-as-team-${team._id}`}
+                      key={team._id}
+                      type="button"
+                      onClick={() => setApplyAsTeamId(team._id)}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                        applyAsTeamId === team._id
+                          ? 'bg-violet-600 border-violet-600 text-zinc-50'
+                          : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'
+                      }`}
+                    >
+                      {team.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
                 Instrument(s) / Role(s) you'll fill:
@@ -439,6 +517,11 @@ function GigDetail({
               <div className="w-full bg-emerald-500/10 border border-emerald-500/15 p-3 rounded-lg text-emerald-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
                 <Check className="w-4 h-4" />
                 <span>Application Submitted Successfully (Pending Review)</span>
+              </div>
+            ) : conflict ? (
+              <div id="apply-time-conflict" className="w-full bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg text-amber-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>Time Conflict — you're already booked for "{conflict.gigTitle}" during this window</span>
               </div>
             ) : (
               <button

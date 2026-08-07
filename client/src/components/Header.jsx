@@ -1,15 +1,35 @@
-import { Radio, Disc, MessageSquare, HelpCircle, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { Radio, Disc, MessageSquare, HelpCircle, LogOut, UserCog, ChevronDown } from 'lucide-react';
+import RatingBadge from './RatingBadge.jsx';
 
 export default function Header({
   role,
   userName,
   userAvatar,
+  userRating,
+  userRatingCount,
   escrowTotal,
   unreadMessages,
+  allUsers = [],
+  currentUserId,
+  onSwitchUser,
   onOpenChat,
   onOpenHelp,
   onLogout,
 }) {
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+
+  const sortedUsers = [...allUsers].sort((a, b) => {
+    if (a.role !== b.role) return a.role === 'organizer' ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const handleSwitch = (e) => {
+    const selected = allUsers.find((u) => u._id === e.target.value);
+    if (selected) onSwitchUser(selected);
+    setIsSwitcherOpen(false);
+  };
+
   return (
     <header id="app-header" className="border-b border-zinc-800 bg-zinc-950 sticky top-0 z-40 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,6 +74,46 @@ export default function Header({
           {/* Right side controls */}
           <div className="flex items-center gap-2">
 
+            {/* Sandbox identity switcher — tucked in as a compact icon so it stays
+                out of frame during screen recordings; opens a small popover instead
+                of a full-width banner */}
+            <div className="relative">
+              <button
+                id="header-sandbox-switcher-btn"
+                onClick={() => setIsSwitcherOpen((v) => !v)}
+                title="Switch sandbox identity"
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-50 hover:border-zinc-700 transition-colors cursor-pointer"
+              >
+                <UserCog className="w-4 h-4" />
+              </button>
+
+              {isSwitcherOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsSwitcherOpen(false)} />
+                  {/* Fixed + viewport-anchored (not relative to the button) so it can
+                      never overflow past the left edge on narrow phones */}
+                  <div className="fixed top-14 sm:top-16 right-2 mt-2 w-48 max-w-[calc(100vw-1rem)] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-2.5 z-50">
+                    <p className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Sandbox Switcher</p>
+                    <div className="relative">
+                      <select
+                        id="sandbox-user-select"
+                        value={currentUserId || ''}
+                        onChange={handleSwitch}
+                        className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-zinc-200 text-[10px] font-semibold rounded-lg pl-2.5 pr-6 py-2 focus:outline-none focus:border-violet-500 cursor-pointer"
+                      >
+                        {sortedUsers.map((u) => (
+                          <option key={u._id} value={u._id}>
+                            {u.isPremium ? '★ ' : ''}{u.name} — {u.role === 'organizer' ? 'Event Planner' : 'Musician'}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3 h-3 text-zinc-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Help button */}
             <button
               id="header-help-btn"
@@ -82,9 +142,12 @@ export default function Header({
             {/* User name + role — desktop only */}
             <div className="text-right hidden sm:block">
               <span className="text-xs font-semibold text-zinc-200 block">{userName}</span>
-              <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded uppercase tracking-wider mt-0.5 inline-block">
-                {role === 'organizer' ? 'Event Planner' : 'Professional Artist'}
-              </span>
+              <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded uppercase tracking-wider inline-block">
+                  {role === 'organizer' ? 'Event Planner' : 'Professional Artist'}
+                </span>
+                <RatingBadge rating={userRating} count={userRatingCount} />
+              </div>
             </div>
 
             {/* Avatar */}

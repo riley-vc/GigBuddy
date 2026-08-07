@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Clock, DollarSign, MapPin, Plus, Check, Info, FilePlus2, Sparkles, ChevronRight, ChevronLeft } from 'lucide-react';
+import { getRecommendations } from '../api/recommendations.js';
+import PremiumBadge from './PremiumBadge.jsx';
 
 const GENRE_PRESETS = ['OPM', 'Bisrock', 'P-pop', 'Kundiman', 'Jazz-OPM', 'Alternative OPM', 'Acoustic OPM', 'Indie PH', 'Electronic', 'Rock PH', 'Folk PH', 'R&B PH'];
 const INSTRUMENT_PRESETS = [
@@ -101,28 +103,49 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
 
   const [submitting, setSubmitting] = useState(false);
 
+  // Post-publish confirmation — recommended artists for the gig just created
+  const [publishedGig, setPublishedGig] = useState(null);
+  const [postPublishRecs, setPostPublishRecs] = useState([]);
+  const [postPublishLoading, setPostPublishLoading] = useState(false);
+
+  useEffect(() => {
+    if (!publishedGig) return;
+    let cancelled = false;
+    setPostPublishLoading(true);
+    getRecommendations({ gigId: publishedGig._id || publishedGig.id })
+      .then((data) => { if (!cancelled) setPostPublishRecs(data); })
+      .catch(() => { if (!cancelled) setPostPublishRecs([]); })
+      .finally(() => { if (!cancelled) setPostPublishLoading(false); });
+    return () => { cancelled = true; };
+  }, [publishedGig]);
+
   const handlePublish = async () => {
     if (step !== 3) return;
     if (!validateStep(3)) return;
     setSubmitting(true);
     try {
-      await onCreateGig({
+      const gig = await onCreateGig({
         title, venueName, date,
         soundcheckTime, setTime, endTime,
         budget: Number(budget),
         genres, instruments, backlineProvided,
         description,
       });
-      // Reset
-      setTitle(''); setVenueName(''); setDate('');
-      setSoundcheckTime('18:00'); setSetTime('20:30'); setEndTime('23:00');
-      setBudget(''); setDescription('');
-      setGenres([]); setInstruments([]); setBacklineProvided([]);
-      setStep(1);
-      onSuccess();
+      if (gig) setPublishedGig(gig);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleDone = () => {
+    setTitle(''); setVenueName(''); setDate('');
+    setSoundcheckTime('18:00'); setSetTime('20:30'); setEndTime('23:00');
+    setBudget(''); setDescription('');
+    setGenres([]); setInstruments([]); setBacklineProvided([]);
+    setStep(1);
+    setPublishedGig(null);
+    setPostPublishRecs([]);
+    onSuccess();
   };
 
   // TagPicker — inline helper renderer (not a separate React component to avoid
@@ -167,6 +190,71 @@ export default function GigCreatorForm({ onCreateGig, onSuccess }) {
       {errors[errorKey] && <p className="text-xs text-amber-400 mt-1">{errors[errorKey]}</p>}
     </div>
   );
+
+  // ── Post-publish confirmation: recommended artists for the gig just made ──
+  if (publishedGig) {
+    return (
+      <div id="gig-published-confirmation" className="max-w-xl mx-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="text-center space-y-2">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+            <Check className="w-7 h-7 text-emerald-400" />
+          </div>
+          <h2 className="font-bold text-zinc-50 text-xl">Gig Published!</h2>
+          <p className="text-sm text-zinc-400">"{publishedGig.title}" is now live in the marketplace.</p>
+        </div>
+
+        <div className="border-t border-zinc-800 pt-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-violet-400" />
+            <h3 className="text-sm font-bold text-zinc-100">Recommended Artists for This Gig</h3>
+          </div>
+
+          {postPublishLoading ? (
+            <p className="text-xs text-zinc-500">Finding matches…</p>
+          ) : postPublishRecs.length === 0 ? (
+            <p className="text-xs text-zinc-500">No strong matches yet — check back as more musicians join, or browse the Artist Marketplace directly.</p>
+          ) : (
+            <div className="space-y-2.5">
+              {postPublishRecs.map((rec) => {
+                const artist = rec.item;
+                const artistId = artist._id || artist.id;
+                return (
+                  <div
+                    key={artistId}
+                    id={`postpublish-rec-${artistId}`}
+                    className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl p-3"
+                  >
+                    <img
+                      referrerPolicy="no-referrer"
+                      src={artist.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=7c3aed&color=fff&size=80`}
+                      alt={artist.name}
+                      className="w-10 h-10 rounded-lg object-cover border border-zinc-800 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-zinc-50 truncate">{artist.name}</p>
+                        {artist.isPremium && <PremiumBadge compact />}
+                      </div>
+                      <p className="text-[11px] text-violet-400 truncate">{(artist.instruments || []).join(', ') || 'Musician'}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <button
+          id="gig-published-done-btn"
+          type="button"
+          onClick={handleDone}
+          className="w-full bg-violet-600 hover:bg-violet-500 text-zinc-50 font-semibold rounded-lg py-3 text-sm transition-colors cursor-pointer"
+        >
+          Done
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div id="gig-creator-container" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

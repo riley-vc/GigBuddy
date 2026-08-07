@@ -10,7 +10,14 @@ const ApplicationSchema = new mongoose.Schema(
     musicianId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: true, // still the single point of contact, even for a band application
+    },
+    // Set when this application is on behalf of a Team — purely denormalized
+    // display (e.g. "The Roadside Combo applied"). The apply/invite flow
+    // itself stays single-point-of-contact via musicianId above.
+    teamId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Team',
     },
     // Denormalized musician display info (so we don't need to populate for list views)
     musicianName:   { type: String, default: '' },

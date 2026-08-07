@@ -11,23 +11,49 @@ import { useAuth } from './context/AuthContext.jsx';
 
 import { getGigs, createGig, updateGig, updateGigStatus } from './api/gigs.js';
 import { getApplications, createApplication, updateApplicationStatus } from './api/applications.js';
-import { getContracts, createContract, signContract, fundContract, releasePayment } from './api/contracts.js';
-import { getUsers } from './api/users.js';
+import {
+  getContracts, createContract, signContract, fundContract,
+  configurePayoutSplits, respondToPayoutSplit,
+  confirmAttendance, reportNoShow, reportConcern, cancelContract, paySecondInstallment,
+  updateEscrowTerms,
+} from './api/contracts.js';
+import { getReviews, createReview } from './api/reviews.js';
+import { getUsers, updatePremium, updateProfile } from './api/users.js';
+import { getRecommendations } from './api/recommendations.js';
+import { getTeams, getTeam, createTeam, updateTeam } from './api/teams.js';
+import { updateTeamMember } from './api/teamMembers.js';
+import { createTeamInvite, getTeamInvites, updateTeamInviteStatus } from './api/teamInvites.js';
 import { getConversations, createConversation, getMessages, markConversationRead } from './api/conversations.js';
+import {
+  getDirectConversations,
+  openDirectConversation,
+  markDirectConversationRead,
+} from './api/directConversations.js';
+import {
+  getSessionBands,
+  createSessionBand,
+  inviteToSessionBand,
+  respondToSessionBandInvite,
+  removeSessionBandMember,
+} from './api/sessionBands.js';
 
-import RoleToggle from './components/RoleToggle.jsx';
 import Header from './components/Header.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import HelpModal from './components/HelpModal.jsx';
 import MoaContractModal from './components/MoaContractModal.jsx';
+import SessionLineupBoard from './components/SessionLineupBoard.jsx';
 import PaymentPortalModal from './components/PaymentPortalModal.jsx';
+import RateGigModal from './components/RateGigModal.jsx';
 import GigCreatorForm from './components/GigCreatorForm.jsx';
 import OrganizerDashboard from './components/OrganizerDashboard.jsx';
 import MusicianDashboard from './components/MusicianDashboard.jsx';
 import GigMarketplace from './components/GigMarketplace.jsx';
 import ArtistMarketplace from './components/ArtistMarketplace.jsx';
 import ChatDrawer from './components/ChatDrawer.jsx';
-import OrganizerProfileModal from './components/OrganizerProfileModal.jsx';
+import DirectChatDrawer from './components/DirectChatDrawer.jsx';
+import MusicianSocialPage from './components/MusicianSocialPage.jsx';
+import BandPage from './components/BandPage.jsx';
+import OrganizerProfilePage from './components/OrganizerProfilePage.jsx';
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 // currentUser now comes from AuthContext (set by LoginPage / RegisterPage).
@@ -43,12 +69,25 @@ export default function App() {
   const [organizerTab, setOrganizerTab] = useState('dashboard');
   const [musicianTab, setMusicianTab] = useState('find_gigs');
 
+  // ── GigBag Recommends (recommender entity) ──────────────────────────────
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [focusGigId, setFocusGigId] = useState(null);
+  const [focusMusicianId, setFocusMusicianId] = useState(null);
+
   // ── Remote Data ───────────────────────────────────────────────────────────
   const [gigs, setGigs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [contracts, setContracts] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [musicians, setMusicians] = useState([]);
+  const [allUsers, setAllUsers] = useState([]); // every seeded user, for the sandbox switcher
+  const [teams, setTeams] = useState([]);
+  const [myTeams, setMyTeams] = useState([]); // teams where currentUser is an active member
+  const [pendingTeamInvites, setPendingTeamInvites] = useState([]); // team invites awaiting currentUser's response
+  const [sessionBands, setSessionBands] = useState([]); // session bands where currentUser is creator or member
   const [conversations, setConversations] = useState([]);
+  const [directConversations, setDirectConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -59,6 +98,14 @@ export default function App() {
   const [chatLoading, setChatLoading] = useState(false);
   const socketRef = useRef(null);
 
+  // ── Direct (musician-to-musician) Chat State ─────────────────────────────
+  const [isDirectChatOpen, setIsDirectChatOpen] = useState(false);
+  const [activeDirectConvoId, setActiveDirectConvoId] = useState(null);
+  const [directChatMessages, setDirectChatMessages] = useState([]);
+  const [directChatLoading, setDirectChatLoading] = useState(false);
+  const activeDirectConvoIdRef = useRef(null);
+  useEffect(() => { activeDirectConvoIdRef.current = activeDirectConvoId; }, [activeDirectConvoId]);
+
   // ── Musician local profile state ─────────────────────────────────────────
   const [profile, setProfile] = useState(currentUser);
 
@@ -67,15 +114,23 @@ export default function App() {
   const [draftContract, setDraftContract] = useState({});
   const [signingTargetAppId, setSigningTargetAppId] = useState(null);
 
+  // ── Session Lineup Board ─────────────────────────────────────────────────
+  const [isLineupOpen, setIsLineupOpen] = useState(false);
+  const [lineupContract, setLineupContract] = useState({});
+
+  const handleOpenLineup = (contract) => {
+    setLineupContract(contract);
+    setIsLineupOpen(true);
+  };
+
   // ── Payment Portal Modal ──────────────────────────────────────────────────
   const [isPaymentPortalOpen, setIsPaymentPortalOpen] = useState(false);
   const [paymentPortalContract, setPaymentPortalContract] = useState(null);
+  const [isRateGigOpen, setIsRateGigOpen] = useState(false);
+  const [rateGigContract, setRateGigContract] = useState(null);
 
   // ── Help Modal ────────────────────────────────────────────────────────────
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-
-  // ── Organizer Profile Modal ───────────────────────────────────────────────
-  const [isOrgProfileOpen, setIsOrgProfileOpen] = useState(false);
 
   // ── Initialise Socket.io ──────────────────────────────────────────────────
   useEffect(() => {
@@ -87,9 +142,12 @@ export default function App() {
 
     socketRef.current = socket;
 
-    // Incoming message from server — append to active chat
+    // Incoming message from server — route to gig chat or direct chat by conversationId
     socket.on('chat:receive', (message) => {
-      setChatMessages((prev) => {
+      const cid = message.conversationId?.toString();
+      const isDirect = cid === activeDirectConvoIdRef.current;
+      const setter = isDirect ? setDirectChatMessages : setChatMessages;
+      setter((prev) => {
         // Avoid duplicates (can happen if sender is also in the room)
         if (prev.some((m) => m._id === message._id?.toString())) return prev;
         return [...prev, message];
@@ -114,6 +172,7 @@ export default function App() {
       );
       // Full refresh happens on loadData — do a lightweight conversations-only refresh
       refreshConversations();
+      refreshDirectConversations();
     });
 
     return () => {
@@ -127,20 +186,30 @@ export default function App() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [gigsData, appsData, contractsData, musiciansData] = await Promise.all([
+      const [gigsData, appsData, contractsData, musiciansData, teamsData, allUsersData, reviewsData] = await Promise.all([
         getGigs(),
         getApplications(),
         getContracts(),
         getUsers({ role: 'musician' }),
+        getTeams(),
+        getUsers(),
+        getReviews(),
       ]);
 
       setGigs(gigsData.map(normalizeId));
       setApplications(appsData.map(normalizeApp));
       setContracts(contractsData.map(normalizeId));
       setMusicians(musiciansData.map(normalizeId));
+      setTeams(teamsData.map(normalizeId));
+      setAllUsers(allUsersData.map(normalizeId));
+      setReviews(reviewsData.map(normalizeId));
 
       // Load conversations for both users (mock: organizer + musician)
       await refreshConversations();
+      await refreshDirectConversations();
+      await refreshMyTeams();
+      await refreshSessionBands();
+      await refreshPendingTeamInvites();
     } catch (err) {
       setError('Could not connect to the GigBuddy API. Make sure the server is running.');
       console.error(err);
@@ -161,6 +230,39 @@ export default function App() {
     }
   };
 
+  // Musician-only data — harmless no-op-ish for organizers (empty results)
+  const refreshDirectConversations = async (asUser = currentUser) => {
+    try {
+      setDirectConversations(await getDirectConversations({ musicianId: asUser._id }));
+    } catch (err) {
+      console.warn('Could not load direct conversations:', err.message);
+    }
+  };
+
+  const refreshMyTeams = async (asUser = currentUser) => {
+    try {
+      setMyTeams(await getTeams({ musicianId: asUser._id }));
+    } catch (err) {
+      console.warn('Could not load my teams:', err.message);
+    }
+  };
+
+  const refreshPendingTeamInvites = async (asUser = currentUser) => {
+    try {
+      setPendingTeamInvites(await getTeamInvites({ musicianId: asUser._id, status: 'pending' }));
+    } catch (err) {
+      console.warn('Could not load pending band invites:', err.message);
+    }
+  };
+
+  const refreshSessionBands = async (asUser = currentUser) => {
+    try {
+      setSessionBands(await getSessionBands({ musicianId: asUser._id }));
+    } catch (err) {
+      console.warn('Could not load session bands:', err.message);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -177,6 +279,47 @@ export default function App() {
 
   // ── Active conversation object ────────────────────────────────────────────
   const activeConversation = conversations.find((c) => c._id === activeChatConvoId) || null;
+  const activeDirectConversation = directConversations.find((c) => c._id === activeDirectConvoId) || null;
+
+  // ── Gigs the current musician is booked for (point of contact) — feeds the
+  // "which event is this session band for" picker on Social/Band pages ──────
+  // Only contracts that are actually confirmed count as "already booked" —
+  // a still-pending_signatures contract could fall through, so it shouldn't
+  // be eligible for attaching a session band yet.
+  const myGigs = contracts
+    .filter((c) => (c.musicianId?._id || c.musicianId)?.toString() === currentUser._id?.toString())
+    .filter((c) => ['fully_signed', 'funded', 'partially_released', 'completed'].includes(c.status))
+    .map((c) => gigs.find((g) => (g._id || g.id) === (c.gigId?._id || c.gigId)))
+    .filter(Boolean);
+
+  // Bands the current musician created — only they can apply to a gig on
+  // the band's behalf (matches who can configure payout splits as manager)
+  const myCreatedTeams = myTeams.filter(
+    (t) => (t.createdBy?._id || t.createdBy)?.toString() === currentUser._id?.toString()
+  );
+
+  // ── Completed-events count for profile stats (musician: booked as performer;
+  // organizer: gigs they ran) — feeds the read-only "events" stat on Profile ──
+  const completedEventsCount = contracts.filter((c) => {
+    if (c.status !== 'completed') return false;
+    if (currentUser.role === 'musician') {
+      return (c.musicianId?._id || c.musicianId)?.toString() === currentUser._id?.toString();
+    }
+    return (c.organizerId?._id || c.organizerId)?.toString() === currentUser._id?.toString();
+  }).length;
+
+  // ── Persist profile edits (name/bio/location/instruments) ─────────────────
+  // Deliberately avoids the generic loadData() — it's a useCallback frozen at
+  // mount time, so its internal refreshers (e.g. refreshMyTeams) would still
+  // close over the ORIGINAL currentUser rather than the just-saved one.
+  const handleSaveProfile = async (fields) => {
+    const updated = await updateProfile(currentUser._id, fields);
+    setProfile((prev) => ({ ...prev, ...updated }));
+    login(updated);
+    setMusicians((await getUsers({ role: 'musician' })).map(normalizeId));
+    setAllUsers((await getUsers()).map(normalizeId));
+    if (updated.role === 'musician') await refreshMyTeams(updated);
+  };
 
   // ── Open chat drawer ──────────────────────────────────────────────────────
   const handleOpenChat = useCallback(async (conversationId) => {
@@ -236,18 +379,44 @@ export default function App() {
     setIsChatOpen(true);
   }, []);
 
-  // ── Sandbox role switcher — swap mock identity ────────────────────────────
-  const handleRoleSwitch = useCallback(async (selectedRole) => {
-    if (selectedRole === role) return; // already on this role
+  // ── GigBag Recommends (recommender entity) ──────────────────────────────
+  const handleOpenRecommendationsView = useCallback(async () => {
+    setRecommendationsLoading(true);
+    try {
+      const data = await getRecommendations({ userId: currentUser._id, role: currentUser.role });
+      setRecommendations(data);
+    } catch (err) {
+      console.error('Failed to load recommendations:', err.message);
+      setRecommendations([]);
+    } finally {
+      setRecommendationsLoading(false);
+    }
+  }, [currentUser]);
 
-    // Target names from seed data
-    const targetName = selectedRole === 'organizer' ? 'Maria Santos' : 'Carlo Reyes';
+  const handleOpenRecommendationItem = useCallback((type, item) => {
+    setIsChatOpen(false);
+    const itemId = item._id || item.id;
+    if (type === 'gig') {
+      setFocusGigId(itemId);
+      setMusicianTab('find_gigs');
+    } else {
+      setFocusMusicianId(itemId);
+      setOrganizerTab('artist_marketplace');
+    }
+  }, []);
+
+  const handleSimulateUpgrade = useCallback(async () => {
+    const updated = await updatePremium(currentUser._id, true);
+    login(updated);
+  }, [currentUser, login]);
+
+  // ── Sandbox user switcher — swap mock identity to any seeded user ─────────
+  const handleUserSwitch = useCallback(async (targetUser) => {
+    if (targetUser._id === currentUser._id) return; // already this user
+    const selectedRole = targetUser.role;
 
     try {
-      // Fetch all users matching the role and pick by name
-      const users = await getUsers({ role: selectedRole });
-      const match = users.find((u) => u.name === targetName) || users[0];
-      if (!match) return;
+      const match = targetUser;
 
       // Swap the logged-in user in AuthContext + localStorage
       login(match);
@@ -264,24 +433,30 @@ export default function App() {
 
       // Re-fetch data under the new identity
       setLoading(true);
-      const [gigsData, appsData, contractsData, musiciansData] = await Promise.all([
+      const [gigsData, appsData, contractsData, musiciansData, teamsData] = await Promise.all([
         getGigs(),
         getApplications(),
         getContracts(),
         getUsers({ role: 'musician' }),
+        getTeams(),
       ]);
       setGigs(gigsData.map(normalizeId));
       setApplications(appsData.map(normalizeApp));
       setContracts(contractsData.map(normalizeId));
       setMusicians(musiciansData.map(normalizeId));
+      setTeams(teamsData.map(normalizeId));
       await refreshConversations(match);
+      await refreshDirectConversations(match);
+      await refreshMyTeams(match);
+      await refreshSessionBands(match);
+      await refreshPendingTeamInvites(match);
     } catch (err) {
-      console.error('Failed to switch role:', err.message);
+      console.error('Failed to switch user:', err.message);
     } finally {
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, login]);
+  }, [currentUser, login]);
 
   // ── Send a chat message ───────────────────────────────────────────────────
   const handleSendMessage = useCallback((content) => {
@@ -305,16 +480,151 @@ export default function App() {
     });
   }, [activeChatConvoId, currentUser]);
 
+  // ── Direct chat (musician-to-musician, no gig/team context) ──────────────
+  const handleOpenDirectChat = useCallback(async (otherMusician) => {
+    try {
+      const convo = await openDirectConversation({
+        musicianId: currentUser._id,
+        otherMusicianId: otherMusician._id || otherMusician.id,
+        musicianName: currentUser.name,
+        otherMusicianName: otherMusician.name,
+      });
+      setDirectConversations((prev) => (prev.some((c) => c._id === convo._id) ? prev : [convo, ...prev]));
+      setActiveDirectConvoId(convo._id);
+      setIsDirectChatOpen(true);
+      setDirectChatLoading(true);
+      try {
+        setDirectChatMessages(await getMessages(convo._id));
+      } finally {
+        setDirectChatLoading(false);
+      }
+      if (socketRef.current) socketRef.current.emit('chat:join', convo._id);
+      await markDirectConversationRead(convo._id, currentUser._id);
+    } catch (err) {
+      alert(`Could not open chat: ${err.message}`);
+    }
+  }, [currentUser]);
+
+  const handleSelectDirectConversation = useCallback(async (conversationId) => {
+    setActiveDirectConvoId(conversationId);
+    setDirectChatLoading(true);
+    try {
+      setDirectChatMessages(await getMessages(conversationId));
+    } catch (err) {
+      console.error('Failed to load direct messages:', err.message);
+      setDirectChatMessages([]);
+    } finally {
+      setDirectChatLoading(false);
+    }
+    if (socketRef.current) socketRef.current.emit('chat:join', conversationId);
+    try {
+      await markDirectConversationRead(conversationId, currentUser._id);
+    } catch (err) {
+      console.warn('Could not mark direct conversation as read:', err.message);
+    }
+  }, [currentUser]);
+
+  const handleCloseDirectChat = useCallback(() => {
+    if (activeDirectConvoId && socketRef.current) {
+      socketRef.current.emit('chat:leave', activeDirectConvoId);
+    }
+    setIsDirectChatOpen(false);
+    setActiveDirectConvoId(null);
+    setDirectChatMessages([]);
+  }, [activeDirectConvoId]);
+
+  const handleSendDirectMessage = useCallback((content) => {
+    if (!activeDirectConvoId || !socketRef.current) return;
+    return new Promise((resolve, reject) => {
+      socketRef.current.emit(
+        'chat:send',
+        {
+          conversationId: activeDirectConvoId,
+          senderId: currentUser._id,
+          senderRole: 'musician',
+          senderName: currentUser.name,
+          content,
+          contextType: 'direct',
+        },
+        (ack) => {
+          if (ack?.success) resolve(ack.data);
+          else reject(new Error(ack?.error || 'Send failed'));
+        }
+      );
+    });
+  }, [activeDirectConvoId, currentUser]);
+
+  // ── Band / Team roster management ─────────────────────────────────────────
+  const handleCreateTeam = async ({ name, bio }) => {
+    await createTeam({ name, bio, createdBy: currentUser._id });
+    await refreshMyTeams();
+    await loadData(); // the global (unfiltered) teams list also needs the new band
+  };
+
+  const handleInviteToRoster = async (teamId, musicianId, instrument) => {
+    await createTeamInvite({ teamId, invitedBy: currentUser._id, musicianId, instrument });
+  };
+
+  const handleRemoveTeamMember = async (teamMemberId) => {
+    await updateTeamMember(teamMemberId, { status: 'removed' });
+  };
+
+  // Current payout manager hands the role to a different active roster member
+  const handleSetPayoutManager = async (teamId, musicianId) => {
+    await updateTeam(teamId, { defaultPayoutManagerId: musicianId });
+    await refreshMyTeams();
+  };
+
+  const handleRespondTeamInvite = async (inviteId, status) => {
+    await updateTeamInviteStatus(inviteId, status);
+    setPendingTeamInvites((prev) => prev.filter((inv) => inv._id !== inviteId));
+    if (status === 'accepted') await refreshMyTeams();
+  };
+
+  // ── Session bands ──────────────────────────────────────────────────────────
+  const handleCreateSessionBandOnly = async ({ name, gigId, members }) => {
+    await createSessionBand({ name, gigId, createdBy: currentUser._id, members });
+    await refreshSessionBands();
+  };
+
+  const handleInviteToTeamFromSocial = async (teamId, musician, instrument) => {
+    await createTeamInvite({ teamId, invitedBy: currentUser._id, musicianId: musician._id || musician.id, instrument });
+  };
+
+  const handleInviteToSessionBandFromSocial = async (sessionBandId, musician, instrument) => {
+    await inviteToSessionBand(sessionBandId, { musicianId: musician._id || musician.id, instrument });
+    await refreshSessionBands();
+  };
+
+  const handleCreateSessionBandAndInvite = async (bandData, musician, instrument) => {
+    const band = await createSessionBand({ ...bandData, createdBy: currentUser._id });
+    await inviteToSessionBand(band._id, { musicianId: musician._id || musician.id, instrument });
+    await refreshSessionBands();
+  };
+
+  const handleRespondSessionBandInvite = async (sessionBandId, status) => {
+    await respondToSessionBandInvite(sessionBandId, currentUser._id, status);
+    await refreshSessionBands();
+  };
+
+  const handleRemoveSessionBandMemberAction = async (sessionBandId, musicianId) => {
+    await removeSessionBandMember(sessionBandId, musicianId);
+    await refreshSessionBands();
+  };
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   // 1. Musician: Apply for a gig
-  const handleApply = async (gigId, instrument, coverNote, skills) => {
+  // applyAsTeam: pass a Team object to apply on the band's behalf (only
+  // available to the band's creator) — the creator stays the point of
+  // contact, teamId just rides along for display + downstream payout wiring
+  const handleApply = async (gigId, instrument, coverNote, skills, applyAsTeam = null) => {
     try {
       const app = await createApplication({
         gigId,
         musicianId: currentUser._id,
-        musicianName: currentUser.name,
-        musicianAvatar: currentUser.avatar || '',
+        musicianName: applyAsTeam ? applyAsTeam.name : currentUser.name,
+        musicianAvatar: applyAsTeam ? (applyAsTeam.avatar || '') : (currentUser.avatar || ''),
         instrument,
         skills,
         coverNote,
@@ -322,6 +632,7 @@ export default function App() {
         initiatedBy: 'musician',
         organizerId: currentUser._id,
         organizerName: currentUser.name,
+        ...(applyAsTeam && { teamId: applyAsTeam._id }),
       });
       setApplications((prev) => [normalizeApp(app), ...prev]);
       // Refresh conversations so musician sees their sent application thread
@@ -332,7 +643,7 @@ export default function App() {
   };
 
   // 2. Organizer: Approve application — opens MoA draft modal
-  const handleApproveApplication = (appId) => {
+  const handleApproveApplication = async (appId) => {
     const application = applications.find((a) => a.id === appId);
     if (!application) return;
 
@@ -353,30 +664,81 @@ export default function App() {
       status: 'pending_signatures',
     };
 
+    // Band application — pull the roster so the contract seeds one payout
+    // split row per member, defaulting to the team's usual payout mode
+    const appTeamId = application.teamId?._id || application.teamId;
+    if (appTeamId) {
+      try {
+        const team = await getTeam(appTeamId);
+        drafted.teamId = appTeamId;
+        drafted.payoutMode = team.defaultPayoutMode || 'lump_sum';
+        drafted.participants = (team.roster || []).map((m) => ({
+          musicianId: m.musicianId?._id || m.musicianId,
+        }));
+      } catch (err) {
+        console.error('Failed to load team roster for contract draft:', err.message);
+      }
+    }
+
     setDraftContract(drafted);
     setSigningTargetAppId(appId);
     setIsMoaModalOpen(true);
   };
 
-  // 3. Sign contract — creates DB record, updates application + gig status
+  // 3. Sign contract — POSTs a brand-new draft, or PATCHes an existing one
+  // (the latter is required for band contracts, where the server gates the
+  // manager's signature on every payout split being approved first)
   const handleSignContract = async (signature) => {
     try {
-      await createContract({
-        ...draftContract,
-        organizerSignature: role === 'organizer' ? signature : (draftContract.organizerSignature || ''),
-        musicianSignature: role === 'musician' ? signature : (draftContract.musicianSignature || ''),
-        status: 'fully_signed',
-        signedAt: new Date().toLocaleDateString(),
-      });
+      if (draftContract._id) {
+        await signContract(draftContract._id, role, signature);
+      } else {
+        const organizerSignature = role === 'organizer' ? signature : (draftContract.organizerSignature || '');
+        const musicianSignature = role === 'musician' ? signature : (draftContract.musicianSignature || '');
+        const bothSigned = !!organizerSignature && !!musicianSignature;
+        await createContract({
+          ...draftContract,
+          organizerSignature,
+          musicianSignature,
+          status: bothSigned ? 'fully_signed' : 'pending_signatures',
+          signedAt: bothSigned ? new Date().toLocaleDateString() : '',
+        });
+      }
 
       await loadData();
 
       setIsMoaModalOpen(false);
       setDraftContract({});
       setSigningTargetAppId(null);
-      setOrganizerTab('dashboard');
+      if (role === 'organizer') setOrganizerTab('dashboard');
     } catch (err) {
       alert(`Failed to sign contract: ${err.message}`);
+    }
+  };
+
+  // Manager configures the band's payout split (fixed ₱ or % per member)
+  const handleConfigurePayoutSplits = async (contractId, payload) => {
+    try {
+      const updated = await configurePayoutSplits(contractId, payload);
+      setDraftContract(updated);
+      await loadData();
+      return updated;
+    } catch (err) {
+      alert(`Failed to save payout splits: ${err.message}`);
+      return null;
+    }
+  };
+
+  // A band member approves or declines their share
+  const handleRespondToPayoutSplit = async (contractId, musicianId, status) => {
+    try {
+      const updated = await respondToPayoutSplit(contractId, musicianId, status);
+      setDraftContract(updated);
+      await loadData();
+      return updated;
+    } catch (err) {
+      alert(`Failed to respond: ${err.message}`);
+      return null;
     }
   };
 
@@ -418,9 +780,12 @@ export default function App() {
         ...newGigData,
         organizerId: currentUser._id,
       });
-      setGigs((prev) => [normalizeId(gig), ...prev]);
+      const normalized = normalizeId(gig);
+      setGigs((prev) => [normalized, ...prev]);
+      return normalized;
     } catch (err) {
       alert(`Failed to create gig: ${err.message}`);
+      return null;
     }
   };
 
@@ -485,19 +850,109 @@ export default function App() {
     }
   };
 
-  // 10. Release payment (organizer releases to artist)
-  const handleReleasePayment = async (contractId) => {
+  // Pushes a freshly-updated contract into every piece of state that might
+  // be holding a stale copy — both PaymentPortalModal and MoaContractModal
+  // can be looking at the same contract, from either role.
+  const syncContractEverywhere = (updated) => {
+    const uid = (updated._id || updated.id)?.toString();
+    setContracts((prev) => prev.map((c) => ((c._id || c.id)?.toString() === uid ? normalizeId(updated) : c)));
+    setDraftContract((prev) => ((prev._id || prev.id)?.toString() === uid ? updated : prev));
+    setPaymentPortalContract((prev) => (prev && (prev._id || prev.id)?.toString() === uid ? updated : prev));
+  };
+
+  // Either party proposes the escrow split ratio / due-date window before
+  // anyone signs — the "dispute" mechanism is just that nothing's locked in
+  // until both sides are happy enough to sign.
+  const handleUpdateEscrowTerms = async (contractId, terms) => {
     try {
-      const updated = await releasePayment(contractId);
-      setContracts((prev) =>
-        prev.map((c) => (c._id === contractId || c.id === contractId ? { ...normalizeId(updated) } : c))
-      );
-      setIsPaymentPortalOpen(false);
-      setPaymentPortalContract(null);
-      await loadData();
+      const updated = await updateEscrowTerms(contractId, terms);
+      syncContractEverywhere(updated);
+      return updated;
     } catch (err) {
       throw err;
     }
+  };
+
+  // 10. Gig-day mutual confirmation — either party confirms; the first
+  // installment only auto-releases once both have (server-enforced)
+  const handleConfirmAttendance = async (contractId, role) => {
+    try {
+      const updated = await confirmAttendance(contractId, role);
+      syncContractEverywhere(updated);
+      await loadData();
+      return updated;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleReportNoShow = async (contractId, reportedBy) => {
+    try {
+      const updated = await reportNoShow(contractId, reportedBy);
+      syncContractEverywhere(updated);
+      await loadData();
+      return updated;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleReportConcern = async (contractId, role, note) => {
+    try {
+      const updated = await reportConcern(contractId, role, note);
+      syncContractEverywhere(updated);
+      await loadData();
+      return updated;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleCancelContract = async (contractId, role) => {
+    try {
+      const updated = await cancelContract(contractId, role);
+      syncContractEverywhere(updated);
+      await loadData();
+      return updated;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // Pay the remaining 50% (+ any accrued late surcharge, computed server-side)
+  const handlePaySecondInstallment = async (contractId) => {
+    try {
+      const updated = await paySecondInstallment(contractId);
+      syncContractEverywhere(updated);
+      await loadData();
+      return updated;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    await createReview(reviewData); // let RateGigModal show its own inline error on failure
+    await loadData();
+  };
+
+  const handleOpenRateGig = (contract) => {
+    setRateGigContract(contract);
+    setIsRateGigOpen(true);
+  };
+
+  const hasReviewed = (contractId) =>
+    reviews.some(
+      (r) => (r.contractId?._id || r.contractId)?.toString() === (contractId?._id || contractId)?.toString()
+        && (r.raterId?._id || r.raterId)?.toString() === currentUser._id?.toString()
+    );
+
+  const rateeForContract = (contract) => {
+    if (!contract) return null;
+    if (role === 'organizer') {
+      return musicians.find((m) => (m._id || m.id)?.toString() === (contract.musicianId?._id || contract.musicianId)?.toString());
+    }
+    return allUsers.find((u) => (u._id || u.id)?.toString() === (contract.organizerId?._id || contract.organizerId)?.toString());
   };
 
   // 11. Organizer invites a musician directly
@@ -527,25 +982,32 @@ export default function App() {
     }
   };
 
-  // 8–10. Local musician profile mutations (Phase 1 — no DB call yet)
-  const handleUpdateAvailability = (day, status) => {
-    setProfile((prev) => ({
-      ...prev,
-      availability: { ...prev.availability, [day]: status },
-    }));
-  };
-
-  const handleAddBand = (bandName) => {
-    if (!profile.bands.includes(bandName)) {
-      setProfile((prev) => ({ ...prev, bands: [...prev.bands, bandName] }));
+  // Invite a whole band — point of contact is the team's payout manager,
+  // teamId rides along on the Application purely for display (organizer
+  // sees "The Roadside Combo applied" instead of just the manager's name).
+  const handleInviteTeam = async (gigId, team, note) => {
+    try {
+      const app = await createApplication({
+        gigId,
+        musicianId: team.defaultPayoutManagerId,
+        musicianName: team.name,
+        musicianAvatar: team.avatar || '',
+        instrument: '',
+        skills: [],
+        coverNote: note || `Direct invitation from event planner ${currentUser.name} for ${team.name}.`,
+        initiatedBy: 'organizer',
+        organizerId: currentUser._id,
+        organizerName: currentUser.name,
+        teamId: team._id || team.id,
+      });
+      setApplications((prev) => [normalizeApp(app), ...prev]);
+      await refreshConversations();
+      return app;
+    } catch (err) {
+      if (err.message?.includes('Already applied')) return null;
+      alert(`Failed to send invitation: ${err.message}`);
+      return null;
     }
-  };
-
-  const handleRemoveBand = (bandName) => {
-    setProfile((prev) => ({
-      ...prev,
-      bands: prev.bands.filter((b) => b !== bandName),
-    }));
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -595,8 +1057,13 @@ export default function App() {
         role={role}
         userName={displayUser.name}
         userAvatar={displayUser.avatar}
+        userRating={displayUser.rating}
+        userRatingCount={displayUser.ratingCount}
         escrowTotal={escrowTotal}
         unreadMessages={unreadMessages}
+        allUsers={allUsers}
+        currentUserId={currentUser._id}
+        onSwitchUser={handleUserSwitch}
         onOpenChat={handleOpenChatList}
         onOpenHelp={() => setIsHelpOpen(true)}
         onLogout={logout}
@@ -604,9 +1071,6 @@ export default function App() {
 
       {/* 2. Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 mb-bottom-nav md:mb-0">
-
-        {/* Role Toggle */}
-        <RoleToggle role={role} onChange={handleRoleSwitch} />
 
         {/* Nav Tabs — desktop only; mobile uses BottomNav */}
         <div id="role-dependent-tabs" className="hidden md:flex bg-zinc-900/60 p-1.5 rounded-xl border border-zinc-800/80 items-center justify-between gap-4">
@@ -694,6 +1158,7 @@ export default function App() {
                 applications={applications}
                 contracts={contracts}
                 conversations={conversations}
+                musicians={musicians}
                 onApproveApplication={handleApproveApplication}
                 onRejectApplication={handleRejectApplication}
                 onCancelGig={handleCancelGig}
@@ -701,14 +1166,27 @@ export default function App() {
                 onStartChat={handleStartChatWithApplicant}
                 onOpenContract={handleOpenExistingContract}
                 onOpenPayment={handleOpenPaymentPortal}
+                onRateGig={handleOpenRateGig}
+                hasReviewed={hasReviewed}
               />
             ) : organizerTab === 'artist_marketplace' ? (
               <ArtistMarketplace
                 musicians={musicians}
+                teams={teams}
                 gigs={gigs}
                 applications={applications}
+                contracts={contracts}
                 onInvite={handleInviteMusician}
+                onInviteTeam={handleInviteTeam}
                 onOpenInviteChat={handleOpenChat}
+                initialFocusMusicianId={focusMusicianId}
+              />
+            ) : organizerTab === 'profile' ? (
+              <OrganizerProfilePage
+                profile={profile}
+                contracts={contracts}
+                musicians={musicians}
+                onSaveProfile={handleSaveProfile}
               />
             ) : (
               <GigCreatorForm
@@ -721,8 +1199,43 @@ export default function App() {
               <GigMarketplace
                 gigs={gigs}
                 applications={applications}
+                contracts={contracts}
                 profile={profile}
+                myCreatedTeams={myCreatedTeams}
                 onApply={handleApply}
+                initialFocusGigId={focusGigId}
+              />
+            ) : musicianTab === 'social' ? (
+              <MusicianSocialPage
+                musicians={musicians}
+                profile={profile}
+                myTeams={myTeams}
+                mySessionBands={sessionBands}
+                myGigs={myGigs}
+                onOpenDirectChat={handleOpenDirectChat}
+                onInviteToTeam={handleInviteToTeamFromSocial}
+                onInviteToSessionBand={handleInviteToSessionBandFromSocial}
+                onCreateSessionBandAndInvite={handleCreateSessionBandAndInvite}
+              />
+            ) : musicianTab === 'band' ? (
+              <BandPage
+                profile={profile}
+                myTeams={myTeams}
+                myCreatedTeams={myCreatedTeams}
+                mySessionBands={sessionBands}
+                musicians={musicians}
+                myGigs={myGigs}
+                pendingTeamInvites={pendingTeamInvites}
+                completedEventsCount={completedEventsCount}
+                onSaveProfile={handleSaveProfile}
+                onCreateTeam={handleCreateTeam}
+                onInviteToRoster={handleInviteToRoster}
+                onRemoveTeamMember={handleRemoveTeamMember}
+                onSetPayoutManager={handleSetPayoutManager}
+                onCreateSessionBand={handleCreateSessionBandOnly}
+                onRespondSessionBandInvite={handleRespondSessionBandInvite}
+                onRemoveSessionBandMember={handleRemoveSessionBandMemberAction}
+                onRespondTeamInvite={handleRespondTeamInvite}
               />
             ) : (
               <MusicianDashboard
@@ -731,10 +1244,11 @@ export default function App() {
                 applications={applications}
                 contracts={contracts}
                 conversations={conversations}
-                onUpdateAvailability={handleUpdateAvailability}
-                onAddBand={handleAddBand}
-                onRemoveBand={handleRemoveBand}
                 onOpenChat={handleOpenChat}
+                onOpenContract={handleOpenExistingContract}
+                onOpenLineup={handleOpenLineup}
+                onRateGig={handleOpenRateGig}
+                hasReviewed={hasReviewed}
               />
             )
           )}
@@ -760,20 +1274,20 @@ export default function App() {
         onSign={handleSignContract}
         role={role}
         currentUser={currentUser}
+        musicians={musicians}
+        onConfigureSplits={handleConfigurePayoutSplits}
+        onRespondSplit={handleRespondToPayoutSplit}
+        onConfirmAttendance={handleConfirmAttendance}
+        onReportConcern={handleReportConcern}
+        onCancelContract={handleCancelContract}
+        onUpdateEscrowTerms={handleUpdateEscrowTerms}
       />
 
-      {/* Organizer Profile Modal */}
-      <OrganizerProfileModal
-        isOpen={isOrgProfileOpen}
-        onClose={() => setIsOrgProfileOpen(false)}
-        currentUser={profile}
-        onSave={async ({ name, bio }) => {
-          // Optimistically update local profile
-          setProfile((prev) => ({ ...prev, name, bio }));
-          // Persist to server (best-effort — Phase 1 has no PUT /api/users/:id yet,
-          // so we just update local state; Phase 2 will add the endpoint)
-          setIsOrgProfileOpen(false);
-        }}
+      <SessionLineupBoard
+        isOpen={isLineupOpen}
+        onClose={() => setIsLineupOpen(false)}
+        contract={lineupContract}
+        musicians={musicians}
       />
 
       {/* Payment Portal Modal */}
@@ -781,8 +1295,23 @@ export default function App() {
         isOpen={isPaymentPortalOpen}
         onClose={() => { setIsPaymentPortalOpen(false); setPaymentPortalContract(null); }}
         contract={paymentPortalContract}
+        musicians={musicians}
         onFund={handleFundContract}
-        onRelease={handleReleasePayment}
+        onConfirmAttendance={handleConfirmAttendance}
+        onReportNoShow={handleReportNoShow}
+        onReportConcern={handleReportConcern}
+        onCancelContract={handleCancelContract}
+        onPaySecondInstallment={handlePaySecondInstallment}
+      />
+
+      <RateGigModal
+        isOpen={isRateGigOpen}
+        onClose={() => { setIsRateGigOpen(false); setRateGigContract(null); }}
+        contract={rateGigContract}
+        currentUser={currentUser}
+        role={role}
+        ratee={rateeForContract(rateGigContract)}
+        onSubmit={handleSubmitReview}
       />
 
       {/* Chat Drawer */}
@@ -797,6 +1326,24 @@ export default function App() {
         onSend={handleSendMessage}
         onSelectConversation={handleOpenChat}
         loading={chatLoading}
+        isPremiumUser={!!currentUser.isPremium}
+        recommendations={recommendations}
+        recommendationsLoading={recommendationsLoading}
+        onOpenRecommendationsView={handleOpenRecommendationsView}
+        onOpenRecommendationItem={handleOpenRecommendationItem}
+        onSimulateUpgrade={handleSimulateUpgrade}
+      />
+
+      <DirectChatDrawer
+        isOpen={isDirectChatOpen}
+        onClose={handleCloseDirectChat}
+        conversations={directConversations}
+        conversation={activeDirectConversation}
+        messages={directChatMessages}
+        currentUserId={currentUser._id}
+        onSend={handleSendDirectMessage}
+        onSelectConversation={handleSelectDirectConversation}
+        loading={directChatLoading}
       />
 
       {/* Help Modal */}
@@ -811,7 +1358,7 @@ export default function App() {
         onOrganizerTab={setOrganizerTab}
         onMusicianTab={setMusicianTab}
         onOpenChat={handleOpenChatList}
-        onOrganizerProfile={() => setIsOrgProfileOpen(true)}
+        onOrganizerProfile={() => setOrganizerTab('profile')}
       />
 
       {/* Footer — hidden on mobile to save space */}

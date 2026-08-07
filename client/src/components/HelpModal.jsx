@@ -5,7 +5,7 @@ const STEPS = [
   ['02. OPEN CHAT', 'After inviting, tap "Open Chat" to start a real-time conversation with that artist.'],
   ['03. SWITCH TO MUSICIAN', 'Toggle role to Live Musician → Dashboard → check Planner Invitations inbox.'],
   ['04. REPLY IN INBOX', 'Open the invitation card — the chat drawer opens. Reply to the planner in real-time!'],
-  ['05. SIGN THE MoA', 'Back in Planner mode, approve the application → Draft MoA → Sign to lock escrow.'],
+  ['05. LOCK IN THE BOOKING', 'Back in Planner mode, approve the application → Draft the agreement → Sign to lock in payment.'],
 ];
 
 export default function HelpModal({ isOpen, onClose }) {

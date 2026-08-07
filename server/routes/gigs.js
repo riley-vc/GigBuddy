@@ -1,16 +1,33 @@
 import express from 'express';
 import Gig from '../models/Gig.js';
+import User from '../models/User.js';
 
 const router = express.Router();
 
-// GET /api/gigs — list gigs (optionally filter by status or organizerId)
+// GET /api/gigs — list gigs (optionally filter by status or organizerId).
+// Gigs posted by a premium organizer are boosted to the top (stable sort
+// preserves the existing date-ascending order within each tier) and flagged
+// with isPromoted so the frontend can badge them.
 router.get('/', async (req, res) => {
   try {
     const filter = {};
     if (req.query.status) filter.status = req.query.status;
     if (req.query.organizerId) filter.organizerId = req.query.organizerId;
 
-    const gigs = await Gig.find(filter).sort({ date: 1 });
+    const gigs = await Gig.find(filter).sort({ date: 1 }).lean();
+
+    const organizerIds = [...new Set(gigs.map((g) => g.organizerId.toString()))];
+    const organizers = await User.find({ _id: { $in: organizerIds } }).select('isPremium rating ratingCount name');
+    const organizersById = new Map(organizers.map((u) => [u._id.toString(), u]));
+
+    gigs.forEach((g) => {
+      const organizer = organizersById.get(g.organizerId.toString());
+      g.isPromoted = !!organizer?.isPremium;
+      g.organizerRating = organizer?.rating ?? null;
+      g.organizerRatingCount = organizer?.ratingCount ?? 0;
+    });
+    gigs.sort((a, b) => (b.isPromoted === true) - (a.isPromoted === true));
+
     res.json({ success: true, data: gigs });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

@@ -39,6 +39,7 @@ router.post('/', async (req, res) => {
       sampleVideoUrl,
       coverNote,
       initiatedBy = 'musician',
+      teamId, // set when musicianId is applying as the point-of-contact for a band
       // For conversation seeding — passed from the frontend
       organizerId,
       organizerName,
@@ -60,6 +61,7 @@ router.post('/', async (req, res) => {
       sampleVideoUrl,
       coverNote,
       initiatedBy,
+      teamId,
     });
 
     await application.save();

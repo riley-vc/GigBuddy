@@ -142,57 +142,83 @@ export default function LoginPage({ onSwitchToRegister }) {
             </span>
           </div>
 
-          {/* Organizer row */}
-          <button
-            id="demo-fill-organizer"
-            type="button"
-            onClick={() => { setEmail('maria@skydeck.com.ph'); setPassword('password123'); }}
-            className="w-full flex items-center gap-3 px-4 py-3.5 bg-zinc-950 hover:bg-zinc-900 transition-colors text-left border-b border-zinc-800/60 cursor-pointer group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center shrink-0">
-              <span className="text-fuchsia-400 text-xs font-bold">EP</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-zinc-200 group-hover:text-zinc-50 transition-colors">
-                Maria Santos
-                <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 rounded uppercase tracking-wide">
-                  Event Planner
-                </span>
-              </p>
-              <p className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">maria@skydeck.com.ph</p>
-            </div>
-            <span className="text-[10px] font-mono text-zinc-600 group-hover:text-violet-400 transition-colors shrink-0">
-              Use →
-            </span>
-          </button>
+          {/* Organizer rows */}
+          {[
+            { name: 'Maria Santos', email: 'maria@skydeck.com.ph', initials: 'EP', premium: false },
+            { name: 'Diego Fernandez', email: 'diego@fiestaproductions.ph', initials: 'DF', premium: true },
+          ].map((acct) => (
+            <button
+              id={`demo-fill-organizer-${acct.initials.toLowerCase()}`}
+              key={acct.email}
+              type="button"
+              onClick={() => { setEmail(acct.email); setPassword('password123'); }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 bg-zinc-950 hover:bg-zinc-900 transition-colors text-left border-b border-zinc-800/60 cursor-pointer group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center shrink-0">
+                <span className="text-fuchsia-400 text-xs font-bold">{acct.initials}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-zinc-200 group-hover:text-zinc-50 transition-colors flex items-center flex-wrap gap-1.5">
+                  {acct.name}
+                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 rounded uppercase tracking-wide">
+                    Event Planner
+                  </span>
+                  {acct.premium && (
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wide">
+                      ★ Premium
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">{acct.email}</p>
+              </div>
+              <span className="text-[10px] font-mono text-zinc-600 group-hover:text-violet-400 transition-colors shrink-0">
+                Use →
+              </span>
+            </button>
+          ))}
 
-          {/* Musician row */}
-          <button
-            id="demo-fill-musician"
-            type="button"
-            onClick={() => { setEmail('carlo@gigbag.ph'); setPassword('password123'); }}
-            className="w-full flex items-center gap-3 px-4 py-3.5 bg-zinc-950 hover:bg-zinc-900 transition-colors text-left cursor-pointer group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-              <span className="text-violet-400 text-xs font-bold">M</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-zinc-200 group-hover:text-zinc-50 transition-colors">
-                Carlo Reyes
-                <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded uppercase tracking-wide">
-                  Musician
-                </span>
-              </p>
-              <p className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">carlo@gigbag.ph</p>
-            </div>
-            <span className="text-[10px] font-mono text-zinc-600 group-hover:text-violet-400 transition-colors shrink-0">
-              Use →
-            </span>
-          </button>
+          {/* Musician rows */}
+          {[
+            { name: 'Carlo Reyes', email: 'carlo@gigbag.ph', initials: 'CR', premium: false },
+            { name: 'Bea Villanueva', email: 'bea@beatrice.music', initials: 'BV', premium: true },
+            { name: 'Jomar "JR" Ramos', email: 'jr@jrdrums.ph', initials: 'JR', premium: false },
+            { name: 'Patricia "Pat" Mendoza', email: 'pat@patmendozamusic.ph', initials: 'PM', premium: true },
+          ].map((acct, i, arr) => (
+            <button
+              id={`demo-fill-musician-${acct.initials.toLowerCase()}`}
+              key={acct.email}
+              type="button"
+              onClick={() => { setEmail(acct.email); setPassword('password123'); }}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 bg-zinc-950 hover:bg-zinc-900 transition-colors text-left cursor-pointer group ${
+                i < arr.length - 1 ? 'border-b border-zinc-800/60' : ''
+              }`}
+            >
+              <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                <span className="text-violet-400 text-xs font-bold">{acct.initials}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-zinc-200 group-hover:text-zinc-50 transition-colors flex items-center flex-wrap gap-1.5">
+                  {acct.name}
+                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded uppercase tracking-wide">
+                    Musician
+                  </span>
+                  {acct.premium && (
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wide">
+                      ★ Premium
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">{acct.email}</p>
+              </div>
+              <span className="text-[10px] font-mono text-zinc-600 group-hover:text-violet-400 transition-colors shrink-0">
+                Use →
+              </span>
+            </button>
+          ))}
 
           {/* Password note */}
           <div className="px-4 py-2 bg-zinc-900/40 flex items-center justify-between">
-            <span className="text-[10px] text-zinc-600 font-mono">Password for both accounts:</span>
+            <span className="text-[10px] text-zinc-600 font-mono">Password for all accounts:</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded">
               password123
             </span>

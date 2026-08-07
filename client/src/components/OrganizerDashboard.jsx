@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   Calendar, Users, Briefcase, FileSignature, Check, X, Shield,
-  FileText, ArrowRight, Pencil, MessageSquare, ChevronDown, ChevronUp,
+  FileText, ArrowRight, Pencil, MessageSquare, ChevronDown, ChevronUp, Star,
 } from 'lucide-react';
+import PremiumBadge from './PremiumBadge.jsx';
 
 // ─── Genre / Instrument presets (mirrors GigCreatorForm) ─────────────────────
 const GENRE_PRESETS = ['OPM', 'Bisrock', 'P-pop', 'Kundiman', 'Jazz-OPM', 'R&B', 'Hip-hop', 'Reggae', 'Rock', 'Pop', 'EDM'];
@@ -200,6 +201,7 @@ export default function OrganizerDashboard({
   applications,
   contracts,
   conversations,
+  musicians = [],
   onApproveApplication,
   onRejectApplication,
   onCancelGig,
@@ -207,6 +209,8 @@ export default function OrganizerDashboard({
   onOpenPayment,
   onEditGig,
   onStartChat,
+  onRateGig,
+  hasReviewed,
 }) {
   const [activeTab, setActiveTab]   = useState('managed');
   const [editingGig, setEditingGig] = useState(null);
@@ -214,7 +218,7 @@ export default function OrganizerDashboard({
   // Stats
   const activeOpenCalls  = gigs.filter((g) => g.status === 'open').length;
   const pendingApps      = applications.filter((a) => a.status === 'pending').length;
-  const confirmedBookings = gigs.filter((g) => g.status === 'filled').length;
+  const confirmedBookings = gigs.filter((g) => ['filled', 'in_progress', 'completed'].includes(g.status)).length;
 
   return (
     <div id="organizer-dashboard-wrapper" className="space-y-6">
@@ -310,18 +314,27 @@ export default function OrganizerDashboard({
                   const activeAppCount = gigApps.filter((a) => a.status === 'pending').length;
                   const isOpen        = gig.status === 'open';
 
+                  const GIG_STATUS_LABEL = {
+                    open: 'Sourcing Artists',
+                    filled: 'Booked & Locked',
+                    in_progress: 'Booking In Progress',
+                    completed: 'Completed',
+                    cancelled: 'Cancelled',
+                  };
+                  const GIG_STATUS_CLASS = {
+                    open: 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
+                    filled: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+                    in_progress: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+                    completed: 'bg-zinc-800 text-zinc-400 border border-zinc-700',
+                    cancelled: 'bg-red-500/10 text-red-400 border border-red-500/20',
+                  };
+
                   return (
                     <div key={gig.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors flex flex-col justify-between space-y-4">
                       <div className="space-y-2">
                         <div className="flex justify-between items-start gap-2">
-                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold font-mono tracking-wider ${
-                            gig.status === 'open'
-                              ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                              : gig.status === 'filled'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-zinc-800 text-zinc-500'
-                          }`}>
-                            {gig.status === 'open' ? 'Sourcing Artists' : gig.status === 'filled' ? 'Booked & Locked' : 'Cancelled'}
+                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold font-mono tracking-wider ${GIG_STATUS_CLASS[gig.status] || 'bg-zinc-800 text-zinc-500'}`}>
+                            {GIG_STATUS_LABEL[gig.status] || gig.status}
                           </span>
                           <span className="font-mono font-bold text-emerald-400 text-sm">₱{gig.budget?.toLocaleString()}</span>
                         </div>
@@ -407,6 +420,12 @@ export default function OrganizerDashboard({
                 {applications
                   .filter((app) => app.status === 'pending')
                   .map((app) => {
+                    const applicantId = (app.musicianId?._id || app.musicianId)?.toString();
+                    const isPremiumApplicant = !!musicians.find((m) => (m._id || m.id)?.toString() === applicantId)?.isPremium;
+                    return { app, isPremiumApplicant };
+                  })
+                  .sort((a, b) => (b.isPremiumApplicant === true) - (a.isPremiumApplicant === true))
+                  .map(({ app, isPremiumApplicant }) => {
                     const associatedGig = gigs.find((g) => g.id === (app.gigId?._id || app.gigId));
 
                     return (
@@ -423,6 +442,7 @@ export default function OrganizerDashboard({
                             <div>
                               <h4 className="font-bold text-zinc-100 text-base flex items-center gap-2 flex-wrap">
                                 {app.musicianName || 'Unknown Musician'}
+                                {isPremiumApplicant && <PremiumBadge compact />}
                                 <span className="px-2 py-0.5 bg-zinc-950 border border-zinc-800 text-[9px] font-mono font-normal text-violet-400 rounded">
                                   {app.instrument}
                                 </span>
@@ -517,12 +537,13 @@ export default function OrganizerDashboard({
                 {contracts.map((contract) => {
                   const cid = contract.id || contract._id;
                   const st  = contract.status;
+                  const rated = hasReviewed ? hasReviewed(cid) : true;
                   return (
                     <div key={cid} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                       <div className="flex items-center gap-3.5">
                         <div className={`p-2.5 rounded-lg shrink-0 ${
-                          st === 'funded' ? 'bg-emerald-500/10 text-emerald-400'
-                          : st === 'completed' ? 'bg-violet-500/10 text-violet-400'
+                          st === 'funded' || st === 'partially_released' ? 'bg-emerald-500/10 text-emerald-400'
+                          : st === 'cancelled' ? 'bg-red-500/10 text-red-400'
                           : 'bg-violet-500/10 text-violet-400'
                         }`}>
                           <FileText className="w-5 h-5" />
@@ -539,18 +560,22 @@ export default function OrganizerDashboard({
 
                       <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-zinc-800/60 pt-3.5 md:pt-0 flex-wrap">
                         <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold font-mono ${
-                          st === 'fully_signed'     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : st === 'funded'         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : st === 'completed'      ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                          st === 'fully_signed'          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          : st === 'funded'               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : st === 'partially_released'   ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                          : st === 'completed'            ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                          : st === 'cancelled'            ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                           : 'bg-zinc-800 text-zinc-500'
                         }`}>
-                          {st === 'fully_signed'  ? '✍ Signed — Awaiting Deposit'
-                          : st === 'funded'       ? '🔒 Funded — Escrow Active'
-                          : st === 'completed'    ? '✅ Payment Released'
+                          {st === 'fully_signed'        ? '✍ Signed — Awaiting Deposit'
+                          : st === 'funded'             ? '🔒 50% Funded — Escrow Active'
+                          : st === 'partially_released' ? '💸 50% Paid — Balance Due'
+                          : st === 'completed'          ? '✅ Fully Paid'
+                          : st === 'cancelled'          ? '✗ Cancelled'
                           : 'Awaiting Signatures'}
                         </span>
 
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2 items-center flex-wrap">
                           <button
                             id={`open-contract-${cid}`}
                             onClick={() => onOpenContract(contract)}
@@ -566,7 +591,7 @@ export default function OrganizerDashboard({
                               onClick={() => onOpenPayment(contract)}
                               className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/30"
                             >
-                              Deposit Funds →
+                              Deposit 50% →
                             </button>
                           )}
 
@@ -576,7 +601,27 @@ export default function OrganizerDashboard({
                               onClick={() => onOpenPayment(contract)}
                               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-emerald-900/30"
                             >
-                              Release Payment →
+                              Confirm Attendance →
+                            </button>
+                          )}
+
+                          {st === 'partially_released' && (
+                            <button
+                              id={`pay-balance-${cid}`}
+                              onClick={() => onOpenPayment(contract)}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-emerald-900/30"
+                            >
+                              Pay Remaining Balance →
+                            </button>
+                          )}
+
+                          {st === 'completed' && onRateGig && !rated && (
+                            <button
+                              id={`rate-gig-${cid}`}
+                              onClick={() => onRateGig(contract)}
+                              className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 rounded text-xs font-bold transition-colors flex items-center gap-1.5"
+                            >
+                              <Star className="w-3.5 h-3.5" /> Rate Artist
                             </button>
                           )}
                         </div>

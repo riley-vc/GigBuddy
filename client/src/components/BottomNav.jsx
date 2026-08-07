@@ -1,4 +1,4 @@
-import { Briefcase, Users, Compass, Sparkles, Store, MessageSquare, UserCircle } from 'lucide-react';
+import { Briefcase, Compass, Sparkles, Store, MessageSquare, UserCircle, UsersRound } from 'lucide-react';
 
 export default function BottomNav({
   role,
@@ -40,6 +40,14 @@ export default function BottomNav({
               active={organizerTab === 'create_gig'}
               onClick={() => onOrganizerTab('create_gig')}
             />
+            {/* Profile */}
+            <BottomNavItem
+              id="bnav-org-profile"
+              label="Profile"
+              icon={<UserCircle className="w-5 h-5" />}
+              active={organizerTab === 'profile'}
+              onClick={onOrganizerProfile}
+            />
             {/* Messages */}
             <BottomNavItem
               id="bnav-org-messages"
@@ -48,29 +56,38 @@ export default function BottomNav({
               badge={unreadMessages}
               onClick={onOpenChat}
             />
-            {/* Profile */}
-            <BottomNavItem
-              id="bnav-org-profile"
-              label="Profile"
-              icon={<UserCircle className="w-5 h-5" />}
-              onClick={onOrganizerProfile}
-            />
           </>
         ) : (
           <>
-            {/* Find Gigs */}
+            {/* Dashboard */}
             <BottomNavItem
-              id="bnav-mus-find"
-              label="Find Gigs"
-              icon={<Compass className="w-5 h-5" />}
+              id="bnav-mus-dashboard"
+              label="Dashboard"
+              icon={<Briefcase className="w-5 h-5" />}
+              badge={unreadMessages}
+              active={musicianTab === 'dashboard'}
+              onClick={() => onMusicianTab('dashboard')}
+            />
+            {/* Social — browse musicians, chat, invite to a band/session */}
+            <BottomNavItem
+              id="bnav-mus-social"
+              label="Social"
+              icon={<UsersRound className="w-5 h-5" />}
+              active={musicianTab === 'social'}
+              onClick={() => onMusicianTab('social')}
+            />
+            {/* Find Gigs — FAB centre button */}
+            <FindGigsFab
               active={musicianTab === 'find_gigs'}
               onClick={() => onMusicianTab('find_gigs')}
             />
-            {/* Dashboard — FAB centre button */}
-            <DashboardFab
-              active={musicianTab === 'dashboard'}
-              badge={unreadMessages}
-              onClick={() => onMusicianTab('dashboard')}
+            {/* Profile — editable profile + band/session management */}
+            <BottomNavItem
+              id="bnav-mus-band"
+              label="Profile"
+              icon={<UserCircle className="w-5 h-5" />}
+              active={musicianTab === 'band'}
+              onClick={() => onMusicianTab('band')}
             />
             {/* Messages */}
             <BottomNavItem
@@ -117,12 +134,12 @@ function PostGigFab({ active, onClick }) {
   );
 }
 
-// ── Elevated circular FAB for Musician Dashboard ────────────────────────────
-function DashboardFab({ active, badge = 0, onClick }) {
+// ── Elevated circular FAB for Find Gigs ─────────────────────────────────────
+function FindGigsFab({ active, onClick }) {
   return (
     <div className="relative flex flex-col items-center justify-end pb-1 flex-1">
       <button
-        id="bnav-mus-dashboard"
+        id="bnav-mus-find"
         onClick={onClick}
         className={`
           relative -mt-5 w-14 h-14 rounded-full flex items-center justify-center
@@ -133,18 +150,13 @@ function DashboardFab({ active, badge = 0, onClick }) {
             : 'bg-violet-600 hover:bg-violet-500 shadow-violet-600/30 hover:scale-105 active:scale-95'
           }
         `}
-        aria-label="Musician Dashboard"
+        aria-label="Find Gigs"
       >
         <span className="absolute inset-0 rounded-full bg-violet-500/20 blur-md pointer-events-none" />
-        <Users className="w-6 h-6 text-white relative z-10" />
-        {badge > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-white text-violet-700 text-[9px] font-bold rounded-full flex items-center justify-center shadow-lg">
-            {badge > 9 ? '9+' : badge}
-          </span>
-        )}
+        <Compass className="w-6 h-6 text-white relative z-10" />
       </button>
       <span className={`text-[10px] font-semibold tracking-tight mt-1 ${active ? 'text-violet-400' : 'text-zinc-500'}`}>
-        Dashboard
+        Find Gigs
       </span>
     </div>
   );

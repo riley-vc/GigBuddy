@@ -9,6 +9,8 @@ import {
   Loader2,
   ArrowLeft,
   ChevronRight,
+  Sparkles,
+  Lock,
 } from 'lucide-react';
 
 function formatTime(dateStr) {
@@ -122,6 +124,95 @@ function ConvoListItem({ convo, currentRole, onClick }) {
   );
 }
 
+// ─── Recommendation "message" bubble — styled like an incoming chat bubble
+// from the GigBag Recommends bot, containing a compact linkable card ─────────
+function RecommendationBubble({ rec, onOpen }) {
+  const { type, item, matchedOn = [], matchedGig } = rec;
+  const isGig = type === 'gig';
+  const itemId = item._id || item.id;
+
+  return (
+    <div className="flex justify-start mb-1">
+      <div className="max-w-[86%] w-full space-y-1 items-start flex flex-col">
+        <span className="text-[10px] text-zinc-500 px-1">GigBag Recommends</span>
+        <div className="px-3.5 py-3 rounded-2xl rounded-bl-sm bg-zinc-900 border border-zinc-800 text-zinc-200 space-y-2.5 w-full">
+          <p className="text-xs text-zinc-400">
+            {isGig ? '🎯 New match for you:' : `🎯 Great fit for "${matchedGig?.title || 'your open call'}":`}
+          </p>
+
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
+            {isGig ? (
+              <>
+                <p className="text-sm font-bold text-zinc-50 leading-snug">{item.title}</p>
+                <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{item.venueName}</p>
+                <p className="text-xs font-mono text-emerald-400 mt-1.5">₱{item.budget?.toLocaleString()}</p>
+              </>
+            ) : (
+              <div className="flex items-center gap-2.5">
+                <img
+                  referrerPolicy="no-referrer"
+                  src={item.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=7c3aed&color=fff&size=80`}
+                  alt={item.name}
+                  className="w-9 h-9 rounded-lg object-cover border border-zinc-800 shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-zinc-50 truncate">{item.name}</p>
+                  <p className="text-[11px] text-violet-400 truncate">{(item.instruments || []).join(', ') || 'Musician'}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {matchedOn.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {matchedOn.map((tag) => (
+                <span key={tag} className="text-[9px] font-mono text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <button
+            id={`open-recommendation-${type}-${itemId}`}
+            type="button"
+            onClick={onOpen}
+            className="w-full bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg py-2 cursor-pointer transition-colors"
+          >
+            {isGig ? 'View Gig' : 'View Profile'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Locked/upsell state shown to non-premium users ──────────────────────────
+function RecommendUpsell({ onSimulateUpgrade, upgrading }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-10 px-4">
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-600/20">
+        <Lock className="w-7 h-7 text-white" />
+      </div>
+      <div>
+        <p className="text-zinc-100 font-bold text-sm">Personalized recommendations are a Premium perk</p>
+        <p className="text-zinc-500 text-xs mt-1.5 leading-relaxed max-w-xs">
+          Premium members get automated matches sent right to their inbox — plus top placement in the marketplace.
+        </p>
+      </div>
+      <button
+        id="simulate-upgrade-btn"
+        type="button"
+        onClick={onSimulateUpgrade}
+        disabled={upgrading}
+        className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 disabled:opacity-50 text-white text-xs font-bold rounded-xl px-5 py-2.5 cursor-pointer shadow-lg shadow-violet-600/20 transition-opacity"
+      >
+        {upgrading ? 'Upgrading…' : '✨ Simulate Upgrade (Demo)'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Main ChatDrawer ──────────────────────────────────────────────────────────
 export default function ChatDrawer({
   isOpen,
@@ -134,11 +225,19 @@ export default function ChatDrawer({
   onSend,
   onSelectConversation,  // (conversationId) => void
   loading,
+  // ── GigBag Recommends (recommender entity) ──────────────────────────────
+  isPremiumUser = false,
+  recommendations = [],
+  recommendationsLoading = false,
+  onOpenRecommendationsView,   // () => void — fetch trigger
+  onOpenRecommendationItem,    // (type, item) => void
+  onSimulateUpgrade,           // () => Promise
 }) {
-  // 'list' | 'chat'
+  // 'list' | 'chat' | 'recommendations'
   const [view, setView] = useState('list');
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
 
@@ -195,6 +294,21 @@ export default function ChatDrawer({
     setView('list');
   };
 
+  const handleOpenRecommendations = () => {
+    setView('recommendations');
+    if (isPremiumUser) onOpenRecommendationsView?.();
+  };
+
+  const handleSimulateUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      await onSimulateUpgrade?.();
+      onOpenRecommendationsView?.();
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
   const grouped = groupByDate(messages || []);
 
   const otherName = currentRole === 'organizer'
@@ -247,6 +361,28 @@ export default function ChatDrawer({
 
             {/* List body */}
             <div className="flex-1 overflow-y-auto min-h-0">
+              {/* Pinned "recommender entity" — GigBag Recommends */}
+              <button
+                id="open-gigbag-recommends"
+                type="button"
+                onClick={handleOpenRecommendations}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-900/80 transition-colors text-left border-b border-zinc-800/50 cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/20">
+                  <Sparkles className="w-4.5 h-4.5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-zinc-50">GigBag Recommends</span>
+                    {!isPremiumUser && <Lock className="w-3 h-3 text-zinc-500 shrink-0" />}
+                  </div>
+                  <p className="text-[11px] text-zinc-500 truncate">
+                    {isPremiumUser ? 'Matches picked for you' : 'Unlock personalized matches with Premium'}
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-700 shrink-0" />
+              </button>
+
               {sortedConvos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-3 py-10 px-6">
                   <div className="w-16 h-16 rounded-2xl bg-violet-600/10 border border-violet-500/10 flex items-center justify-center">
@@ -420,6 +556,62 @@ export default function ChatDrawer({
               <p className="text-[10px] text-zinc-700 mt-1.5 text-center font-mono hidden sm:block">
                 Shift+Enter for new line
               </p>
+            </div>
+          </>
+        )}
+
+        {/* ══ RECOMMENDATIONS VIEW — the "recommender entity" ═══════════════ */}
+        {view === 'recommendations' && (
+          <>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 bg-zinc-950 shrink-0">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleBackToList}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800 transition-colors cursor-pointer"
+                  title="Back to messages"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-50 leading-tight">GigBag Recommends</p>
+                  <p className="text-[10px] text-zinc-500 font-mono">Automated matchmaking</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
+              {!isPremiumUser ? (
+                <RecommendUpsell onSimulateUpgrade={handleSimulateUpgrade} upgrading={upgrading} />
+              ) : recommendationsLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
+                </div>
+              ) : (recommendations || []).length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-10">
+                  <div className="w-12 h-12 rounded-2xl bg-violet-600/10 border border-violet-500/10 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-violet-400" />
+                  </div>
+                  <p className="text-zinc-500 text-sm">No matches right now.</p>
+                  <p className="text-zinc-600 text-xs">Check back after new gigs go up or your profile changes.</p>
+                </div>
+              ) : (
+                recommendations.map((rec, idx) => (
+                  <RecommendationBubble
+                    key={`${rec.type}-${rec.item?._id || rec.item?.id || idx}`}
+                    rec={rec}
+                    onOpen={() => onOpenRecommendationItem?.(rec.type, rec.item)}
+                  />
+                ))
+              )}
             </div>
           </>
         )}
